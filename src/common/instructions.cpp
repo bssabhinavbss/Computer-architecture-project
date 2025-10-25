@@ -22,6 +22,7 @@ std::unordered_map<std::string, Instruction> instruction_string_map = {
     {"and", Instruction::kand},
     {"or", Instruction::kor},
     {"xor", Instruction::kxor},
+    {"add_simd32",Instruction::kadd_simd32}, //newly added instruction1
     {"sll", Instruction::ksll},
     {"srl", Instruction::ksrl},
     {"sra", Instruction::ksra},
@@ -179,7 +180,7 @@ std::unordered_map<std::string, Instruction> instruction_string_map = {
 
 
 static const std::unordered_set<std::string> valid_instructions = {
-    "add", "sub", "and", "or", "xor", "sll", "srl", "sra", "slt", "sltu",
+    "add", "sub", "and", "or", "xor","add_simd32", "sll", "srl", "sra", "slt", "sltu", //newly added instruction
     "addw", "subw", "sllw", "srlw", "sraw",
     "addi", "xori", "ori", "andi", "slli", "srli", "srai", "slti", "sltiu",
     "addiw", "slliw", "srliw", "sraiw",
@@ -225,7 +226,7 @@ static const std::unordered_set<std::string> valid_instructions = {
 
 static const std::unordered_set<std::string> RTypeInstructions = {
     // Base RV32I
-    "add", "sub", "and", "or", "xor", "sll", "srl", "sra", "slt", "sltu",
+    "add", "sub", "and", "or", "xor","add_simd32", "sll", "srl", "sra", "slt", "sltu", //newly added 
 
     // RV64
     "addw", "subw", "sllw", "srlw", "sraw",
@@ -380,6 +381,7 @@ std::unordered_map<std::string, RTypeInstructionEncoding> R_type_instruction_enc
     {"add", {0b0110011, 0b000, 0b0000000}}, // O_GPR_C_GPR_C_GPR
     {"sub", {0b0110011, 0b000, 0b0100000}}, // O_GPR_C_GPR_C_GPR
     {"xor", {0b0110011, 0b100, 0b0000000}}, // O_GPR_C_GPR_C_GPR
+    {"add_simd32",{0b0110011, 0b000, 0b0001111}},// O_GPR_C_GPR_C_GPR
     {"or", {0b0110011, 0b110, 0b0000000}}, // O_GPR_C_GPR_C_GPR
     {"and", {0b0110011, 0b111, 0b0000000}}, // O_GPR_C_GPR_C_GPR
     {"sll", {0b0110011, 0b001, 0b0000000}}, // O_GPR_C_GPR_C_GPR
@@ -393,7 +395,7 @@ std::unordered_map<std::string, RTypeInstructionEncoding> R_type_instruction_enc
     {"sllw", {0b0111011, 0b001, 0b0000000}}, // O_GPR_C_GPR_C_GPR
     {"srlw", {0b0111011, 0b101, 0b0000000}}, // O_GPR_C_GPR_C_GPR
     {"sraw", {0b0111011, 0b101, 0b0100000}}, // O_GPR_C_GPR_C_GPR
-
+    
 //==RV64M======================================================================================
     {"mul", {0b0110011, 0b000, 0b0000001}}, // O_GPR_C_GPR_C_GPR
     {"mulh", {0b0110011, 0b001, 0b0000001}}, // O_GPR_C_GPR_C_GPR
@@ -620,6 +622,7 @@ std::unordered_map<std::string, std::vector<SyntaxType>> instruction_syntax_map 
     {"add", {SyntaxType::O_GPR_C_GPR_C_GPR}},
     {"sub", {SyntaxType::O_GPR_C_GPR_C_GPR}},
     {"xor", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"add_simd32", {SyntaxType::O_GPR_C_GPR_C_GPR}},
     {"or", {SyntaxType::O_GPR_C_GPR_C_GPR}},
     {"and", {SyntaxType::O_GPR_C_GPR_C_GPR}},
     {"sll", {SyntaxType::O_GPR_C_GPR_C_GPR}},
