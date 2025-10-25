@@ -196,7 +196,12 @@ enum Instruction {
   kfcvt_d_l, 
   kfcvt_d_lu, 
   kfmv_d_x,
-  kadd_simd32,//newly added instruction1
+  kadd_simd32, //newly added instruction1
+  ksub_simd32, //newly added instruction2
+  kmul_simd32, //newly added instruction3
+  kload_simd32, //newly added instruction3
+  krem_simd32, //newly added instruction3
+  kdiv_simd32, //newly added instruction3
 
   INVALID,
 
@@ -242,6 +247,12 @@ inline constexpr std::array<InstructionEncoding, static_cast<size_t>(Instruction
   InstructionEncoding(Instruction::kor,         0b0110011, -1, 0b110, -1, -1, 0b0000000), // kor
   InstructionEncoding(Instruction::kand,        0b0110011, -1, 0b111, -1, -1, 0b0000000), // kand
   InstructionEncoding(Instruction::kadd_simd32, 0b0110011, -1, 0b000, -1 ,-1, 0b0001111), //kadd_simd32
+  InstructionEncoding(Instruction::ksub_simd32, 0b0110011, -1, 0b001, -1 ,-1, 0b0001111), //ksub_simd32
+  InstructionEncoding(Instruction::kmul_simd32, 0b0110011, -1, 0b010, -1 ,-1, 0b0001111), //kmul_simd32
+  InstructionEncoding(Instruction::kload_simd32, 0b0110011, -1, 0b011, -1 ,-1, 0b0001111), //kload_simd32
+  InstructionEncoding(Instruction::kdiv_simd32, 0b0110011, -1, 0b101, -1 ,-1, 0b0001111), //kdiv_simd32
+  InstructionEncoding(Instruction::krem_simd32, 0b0110011, -1, 0b110, -1 ,-1, 0b0001111), //krem_simd32
+  
 
   InstructionEncoding(Instruction::kmul,        0b0110011, -1, 0b000, -1, -1, 0b0000001), // kmul
   InstructionEncoding(Instruction::kmulh,       0b0110011, -1, 0b001, -1, -1, 0b0000001), // kmulh

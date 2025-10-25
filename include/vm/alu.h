@@ -49,6 +49,12 @@ enum class AluOp {
     kOr, ///< Bitwise kOr operation.
     kXor, ///< Bitwise kXor operation.
     kAdd_simd32, ///<Newly added instruction>///
+    kSub_simd32,
+    kMul_simd32,
+    kLoad_simd32,
+    kDiv_simd32,
+    kRem_simd32,
+    
     kSll, ///< Shift left logical operation.
     kSllw, ///< Shift left logical word operation.
     kSrl, ///< Shift right logical operation.
@@ -143,6 +149,11 @@ inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
         case AluOp::kOr: os << "kOr"; break;
         case AluOp::kXor: os << "kXor"; break;
         case AluOp::kAdd_simd32: os << "kAdd_simd32";break;
+        case AluOp::kSub_simd32: os << "kSub_simd32";break;
+        case AluOp::kMul_simd32: os << "kMul_simd32";break;
+        case AluOp::kLoad_simd32: os << "kLoad_simd32";break;
+        case AluOp::kDiv_simd32: os << "kDiv_simd32";break;
+        case AluOp::kRem_simd32: os << "kRem_simd32";break;
         case AluOp::kSll: os << "kSll"; break;
         case AluOp::kSrl: os << "kSrl"; break;
         case AluOp::kSra: os << "kSra"; break;
