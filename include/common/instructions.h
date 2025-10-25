@@ -196,6 +196,7 @@ enum Instruction {
   kfcvt_d_l, 
   kfcvt_d_lu, 
   kfmv_d_x,
+  kadd_simd32,//newly added instruction1
 
   INVALID,
 
@@ -240,7 +241,7 @@ inline constexpr std::array<InstructionEncoding, static_cast<size_t>(Instruction
   InstructionEncoding(Instruction::ksra,        0b0110011, -1, 0b101, -1, -1, 0b0100000), // ksra
   InstructionEncoding(Instruction::kor,         0b0110011, -1, 0b110, -1, -1, 0b0000000), // kor
   InstructionEncoding(Instruction::kand,        0b0110011, -1, 0b111, -1, -1, 0b0000000), // kand
-
+  InstructionEncoding(Instruction::kadd_simd32, 0b0110011, -1, 0b000, -1 ,-1, 0b0001111), //kadd_simd32
 
   InstructionEncoding(Instruction::kmul,        0b0110011, -1, 0b000, -1, -1, 0b0000001), // kmul
   InstructionEncoding(Instruction::kmulh,       0b0110011, -1, 0b001, -1, -1, 0b0000001), // kmulh
