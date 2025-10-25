@@ -197,6 +197,19 @@ static std::string decode_fclass(uint16_t res) {
     case AluOp::kXor: {
       return {static_cast<uint64_t>(a ^ b), false};
     }
+    case AluOp::kAdd_simd32: {
+      auto sa = static_cast<int64_t>(a);
+      auto sb = static_cast<int64_t>(b);
+      auto sa1 = static_cast<int32_t>(sa >> 32); // upper 32
+      auto sa2 = static_cast<int32_t>(sa - (sa1 << 32)); // lower 32
+      auto sb1 = static_cast<int32_t>(sb >> 32); // upper 32
+      auto sb2 = static_cast<int32_t>(sb - (sb1 << 32)); // lower 32
+      auto sr1 = sa1 + sb1;
+      auto sr2 = sa2 + sb2;
+      int64_t sr = sr2 + (sr1 << 32) ;
+      return{sr,false};
+
+    }
     case AluOp::kSll: {
       uint64_t result = a << (b & 63);
       return {result, false};
