@@ -216,6 +216,37 @@ enum Instruction {
   kload_simd8, //newly added instruction3
   krem_simd8, //newly added instruction3
   kdiv_simd8, //newly added instruction3
+
+    // SIMD 4 
+  kadd_simd4,
+  ksub_simd4,
+  kmul_simd4,
+  kdiv_simd4,
+  krem_simd4,
+  kand_simd4,
+  kor_simd4,
+  kxor_simd4,
+
+  // SIMD 2
+  kadd_simd2,
+  ksub_simd2,
+  kmul_simd2,
+  kdiv_simd2,
+  krem_simd2,
+  kand_simd2,
+  kor_simd2,
+  kxor_simd2,
+
+  // SIMD 1 Binary
+
+  kadd_binary,
+  ksub_binary,
+  kmul_binary,
+  kdiv_binary,
+  krem_binary,
+  kand_binary,
+  kor_binary,
+  kxor_binary,
   
 
   INVALID,
@@ -281,6 +312,40 @@ inline constexpr std::array<InstructionEncoding, static_cast<size_t>(Instruction
   InstructionEncoding(Instruction::kload_simd8, 0b0110011, -1, 0b011, -1 ,-1, 0b0111111), //kload_simd8-opcodes to be balanced
   InstructionEncoding(Instruction::kdiv_simd8, 0b0110011, -1, 0b101, -1 ,-1, 0b0111111), //kdiv_simd8-opcodes to be balanced
   InstructionEncoding(Instruction::krem_simd8, 0b0110011, -1, 0b110, -1 ,-1, 0b0111111), //krem_simd8-opcodes to be balanced
+
+    // SIMD 4
+  InstructionEncoding(Instruction::kadd_simd4, 0b0110011, -1, 0b000, -1, -1, 0b1111111),
+  InstructionEncoding(Instruction::ksub_simd4, 0b0110011, -1, 0b001, -1, -1, 0b1111111),
+  InstructionEncoding(Instruction::kmul_simd4, 0b0110011, -1, 0b010, -1, -1, 0b1111111),
+  InstructionEncoding(Instruction::kdiv_simd4, 0b0110011, -1, 0b011, -1, -1, 0b1111111),
+  InstructionEncoding(Instruction::krem_simd4, 0b0110011, -1, 0b100, -1, -1, 0b1111111),
+  InstructionEncoding(Instruction::kand_simd4, 0b0110011, -1, 0b101, -1, -1, 0b1111111),
+  InstructionEncoding(Instruction::kor_simd4,  0b0110011, -1, 0b110, -1, -1, 0b1111111),
+  InstructionEncoding(Instruction::kxor_simd4, 0b0110011, -1, 0b111, -1, -1, 0b1111111),
+  
+  
+    // SIMD 2
+  
+  InstructionEncoding(Instruction::kadd_simd2, 0b0110011, -1, 0b000, -1, -1, 0b0010111),
+  InstructionEncoding(Instruction::ksub_simd2, 0b0110011, -1, 0b001, -1, -1, 0b0010111),
+  InstructionEncoding(Instruction::kmul_simd2, 0b0110011, -1, 0b010, -1, -1, 0b0010111),
+  InstructionEncoding(Instruction::kdiv_simd2, 0b0110011, -1, 0b011, -1, -1, 0b0010111),
+  InstructionEncoding(Instruction::krem_simd2, 0b0110011, -1, 0b100, -1, -1, 0b0010111),
+  InstructionEncoding(Instruction::kand_simd2, 0b0110011, -1, 0b101, -1, -1, 0b0010111),
+  InstructionEncoding(Instruction::kor_simd2,  0b0110011, -1, 0b110, -1, -1, 0b0010111),
+  InstructionEncoding(Instruction::kxor_simd2, 0b0110011, -1, 0b111, -1, -1, 0b0010111),
+  
+  
+    // SIMD 1 Binary
+  
+  InstructionEncoding(Instruction::kadd_binary, 0b0110011, -1, 0b000, -1, -1, 0b0110111),
+  InstructionEncoding(Instruction::ksub_binary, 0b0110011, -1, 0b001, -1, -1, 0b0110111),
+  InstructionEncoding(Instruction::kmul_binary, 0b0110011, -1, 0b010, -1, -1, 0b0110111),
+  InstructionEncoding(Instruction::kdiv_binary, 0b0110011, -1, 0b011, -1, -1, 0b0110111),
+  InstructionEncoding(Instruction::krem_binary, 0b0110011, -1, 0b100, -1, -1, 0b0110111),
+  InstructionEncoding(Instruction::kand_binary, 0b0110011, -1, 0b101, -1, -1, 0b0110111),
+  InstructionEncoding(Instruction::kor_binary,  0b0110011, -1, 0b110, -1, -1, 0b0110111),
+  InstructionEncoding(Instruction::kxor_binary, 0b0110011, -1, 0b111, -1, -1, 0b0110111),
   
   InstructionEncoding(Instruction::kmul,        0b0110011, -1, 0b000, -1, -1, 0b0000001), // kmul
   InstructionEncoding(Instruction::kmulh,       0b0110011, -1, 0b001, -1, -1, 0b0000001), // kmulh
