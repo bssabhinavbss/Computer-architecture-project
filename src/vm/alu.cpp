@@ -204,10 +204,25 @@ static std::string decode_fclass(uint16_t res) {
       auto sa2 = static_cast<int32_t>(sa - (sa1 << 32)); // lower 32
       auto sb1 = static_cast<int32_t>(sb >> 32); // upper 32
       auto sb2 = static_cast<int32_t>(sb - (sb1 << 32)); // lower 32
-      auto sr1 = sa1 + sb1;
-      auto sr2 = sa2 + sb2;
-      int64_t sr = sr2 + (sr1 << 32) ;
-      return{sr,false};
+      int64_t sr1 = static_cast<int64_t>(sa1) + static_cast<int64_t>(sb1);
+      int64_t sr2 = static_cast<int64_t>(sa2) + static_cast<int64_t>(sb2);
+
+    // Saturate sr1
+     if (sr1 > INT32_MAX){ 
+      sr1 = INT32_MAX;
+     }
+     else if (sr1 < INT32_MIN){ 
+      sr1 = INT32_MIN;
+     }
+    // Saturate sr2
+     if (sr2 > INT32_MAX){ 
+      sr2 = INT32_MAX;
+     }
+     else if (sr2 < INT32_MIN){ 
+      sr2 = INT32_MIN;
+     }
+     int64_t sr = (sr2 & 0xFFFFFFFFLL) | (sr1 << 32);
+     return {sr, false};
 
     }
     case AluOp::kSub_simd32: {
@@ -217,11 +232,25 @@ static std::string decode_fclass(uint16_t res) {
       auto sa2 = static_cast<int32_t>(sa - (sa1 << 32)); // lower 32
       auto sb1 = static_cast<int32_t>(sb >> 32); // upper 32
       auto sb2 = static_cast<int32_t>(sb - (sb1 << 32)); // lower 32
-      auto sr1 = sa1 - sb1;
-      auto sr2 = sa2 - sb2;
-      int64_t sr = sr2 + (sr1 << 32) ;
-      return{sr,false};
+      int64_t sr1 = static_cast<int64_t>(sa1) - static_cast<int64_t>(sb1);
+      int64_t sr2 = static_cast<int64_t>(sa2) - static_cast<int64_t>(sb2);
 
+    // Saturate sr1
+     if (sr1 > INT32_MAX){ 
+      sr1 = INT32_MAX;
+     }
+     else if (sr1 < INT32_MIN){ 
+      sr1 = INT32_MIN;
+     }
+    // Saturate sr2
+     if (sr2 > INT32_MAX){ 
+      sr2 = INT32_MAX;
+     }
+     else if (sr2 < INT32_MIN){ 
+      sr2 = INT32_MIN;
+     }
+     int64_t sr = (sr2 & 0xFFFFFFFFLL) | (sr1 << 32);
+     return {sr, false};
     }
     case AluOp::kMul_simd32: {
       auto sa = static_cast<int64_t>(a);
@@ -230,10 +259,25 @@ static std::string decode_fclass(uint16_t res) {
       auto sa2 = static_cast<int32_t>(sa - (sa1 << 32)); // lower 32
       auto sb1 = static_cast<int32_t>(sb >> 32); // upper 32
       auto sb2 = static_cast<int32_t>(sb - (sb1 << 32)); // lower 32
-      auto sr1 = sa1 * sb1;
-      auto sr2 = sa2 * sb2;
-      int64_t sr = sr2 + (sr1 << 32) ;
-      return{sr,false};
+      int64_t sr1 = static_cast<int64_t>(sa1) * static_cast<int64_t>(sb1);
+      int64_t sr2 = static_cast<int64_t>(sa2) * static_cast<int64_t>(sb2);
+
+    // Saturate sr1
+     if (sr1 > INT32_MAX){ 
+      sr1 = INT32_MAX;
+     }
+     else if (sr1 < INT32_MIN){ 
+      sr1 = INT32_MIN;
+     }
+    // Saturate sr2
+     if (sr2 > INT32_MAX){ 
+      sr2 = INT32_MAX;
+     }
+     else if (sr2 < INT32_MIN){ 
+      sr2 = INT32_MIN;
+     }
+     int64_t sr = (sr2 & 0xFFFFFFFFLL) | (sr1 << 32);
+     return {sr, false};
 
     }
     case AluOp::kLoad_simd32: {
@@ -248,31 +292,571 @@ static std::string decode_fclass(uint16_t res) {
 
     }
     case AluOp::kDiv_simd32: {
+      if (b==0) {
+        return {0, false};
+      }
       auto sa = static_cast<int64_t>(a);
       auto sb = static_cast<int64_t>(b);
       auto sa1 = static_cast<int32_t>(sa >> 32); // upper 32
       auto sa2 = static_cast<int32_t>(sa - (sa1 << 32)); // lower 32
       auto sb1 = static_cast<int32_t>(sb >> 32); // upper 32
       auto sb2 = static_cast<int32_t>(sb - (sb1 << 32)); // lower 32
-      auto sr1 = sa1 / sb1;
-      auto sr2 = sa2 / sb2;
-      int64_t sr = sr2 + (sr1 << 32) ;
-      return{sr,false};
+      int64_t sr1 = static_cast<int64_t>(sa1) / static_cast<int64_t>(sb1);
+      int64_t sr2 = static_cast<int64_t>(sa2) / static_cast<int64_t>(sb2);
+
+    // Saturate sr1
+     if (sr1 > INT32_MAX){ 
+      sr1 = INT32_MAX;
+     }
+     else if (sr1 < INT32_MIN){ 
+      sr1 = INT32_MIN;
+     }
+    // Saturate sr2
+     if (sr2 > INT32_MAX){ 
+      sr2 = INT32_MAX;
+     }
+     else if (sr2 < INT32_MIN){ 
+      sr2 = INT32_MIN;
+     }
+     int64_t sr = (sr2 & 0xFFFFFFFFLL) | (sr1 << 32);
+     return {sr, false};
 
     }
     case AluOp::kRem_simd32: {
+      if (b==0) {
+        return {0, false};
+      }
       auto sa = static_cast<int64_t>(a);
       auto sb = static_cast<int64_t>(b);
       auto sa1 = static_cast<int32_t>(sa >> 32); // upper 32
       auto sa2 = static_cast<int32_t>(sa - (sa1 << 32)); // lower 32
       auto sb1 = static_cast<int32_t>(sb >> 32); // upper 32
       auto sb2 = static_cast<int32_t>(sb - (sb1 << 32)); // lower 32
-      auto sr1 = sa1 % sb1;
-      auto sr2 = sa2 % sb2;
-      int64_t sr = sr2 + (sr1 << 32) ;
-      return{sr,false};
+      int64_t sr1 = static_cast<int64_t>(sa1) % static_cast<int64_t>(sb1);
+      int64_t sr2 = static_cast<int64_t>(sa2) % static_cast<int64_t>(sb2);
+
+    // Saturate sr1
+     if (sr1 > INT32_MAX){ 
+      sr1 = INT32_MAX;
+     }
+     else if (sr1 < INT32_MIN){ 
+      sr1 = INT32_MIN;
+     }
+    // Saturate sr2
+     if (sr2 > INT32_MAX){ 
+      sr2 = INT32_MAX;
+     }
+     else if (sr2 < INT32_MIN){ 
+      sr2 = INT32_MIN;
+     }
+     int64_t sr = (sr2 & 0xFFFFFFFFLL) | (sr1 << 32);
+     return {sr, false};
 
     }
+    case AluOp::kAdd_simd16:{
+      auto sa = static_cast<int64_t>(a);
+      auto sb = static_cast<int64_t>(b);
+      
+      // Extract 4 16-bit lanes from a
+      auto sa1 = static_cast<int16_t>(sa >> 48);
+      auto sa_rem48 = sa - (static_cast<int64_t>(sa1) << 48);
+      auto sa2 = static_cast<int16_t>(sa_rem48 >> 32);
+      auto sa_rem32 = sa_rem48 - (static_cast<int64_t>(sa2) << 32);
+      auto sa3 = static_cast<int16_t>(sa_rem32 >> 16);
+      auto sa4 = static_cast<int16_t>(sa_rem32 - (static_cast<int64_t>(sa3) << 16));
+      
+     
+      auto sb1 = static_cast<int16_t>(sb >> 48);
+      auto sb_rem48 = sb - (static_cast<int64_t>(sb1) << 48);
+      auto sb2 = static_cast<int16_t>(sb_rem48 >> 32);
+      auto sb_rem32 = sb_rem48 - (static_cast<int64_t>(sb2) << 32);
+      auto sb3 = static_cast<int16_t>(sb_rem32 >> 16);
+      auto sb4 = static_cast<int16_t>(sb_rem32 - (static_cast<int64_t>(sb3) << 16));
+      
+      
+      int32_t sr1 = static_cast<int32_t>(sa1) + static_cast<int32_t>(sb1);
+      int32_t sr2 = static_cast<int32_t>(sa2) + static_cast<int32_t>(sb2);
+      int32_t sr3 = static_cast<int32_t>(sa3) + static_cast<int32_t>(sb3);
+      int32_t sr4 = static_cast<int32_t>(sa4) + static_cast<int32_t>(sb4);
+      
+      if (sr1 > INT16_MAX) sr1 = INT16_MAX; else if (sr1 < INT16_MIN) sr1 = INT16_MIN;
+      if (sr2 > INT16_MAX) sr2 = INT16_MAX; else if (sr2 < INT16_MIN) sr2 = INT16_MIN;
+      if (sr3 > INT16_MAX) sr3 = INT16_MAX; else if (sr3 < INT16_MIN) sr3 = INT16_MIN;
+      if (sr4 > INT16_MAX) sr4 = INT16_MAX; else if (sr4 < INT16_MIN) sr4 = INT16_MIN;
+
+      
+      int64_t sr = (static_cast<int64_t>(sr1) << 48) |
+                   ((static_cast<int64_t>(sr2) & 0xFFFFLL) << 32) |
+                   ((static_cast<int64_t>(sr3) & 0xFFFFLL) << 16) |
+                   (static_cast<int64_t>(sr4) & 0xFFFFLL);
+      return {sr, false};
+    }
+    case AluOp::kSub_simd16:{
+      auto sa = static_cast<int64_t>(a);
+      auto sb = static_cast<int64_t>(b);
+      
+      auto sa1 = static_cast<int16_t>(sa >> 48);
+      auto sa_rem48 = sa - (static_cast<int64_t>(sa1) << 48);
+      auto sa2 = static_cast<int16_t>(sa_rem48 >> 32);
+      auto sa_rem32 = sa_rem48 - (static_cast<int64_t>(sa2) << 32);
+      auto sa3 = static_cast<int16_t>(sa_rem32 >> 16);
+      auto sa4 = static_cast<int16_t>(sa_rem32 - (static_cast<int64_t>(sa3) << 16));
+      
+      auto sb1 = static_cast<int16_t>(sb >> 48);
+      auto sb_rem48 = sb - (static_cast<int64_t>(sb1) << 48);
+      auto sb2 = static_cast<int16_t>(sb_rem48 >> 32);
+      auto sb_rem32 = sb_rem48 - (static_cast<int64_t>(sb2) << 32);
+      auto sb3 = static_cast<int16_t>(sb_rem32 >> 16);
+      auto sb4 = static_cast<int16_t>(sb_rem32 - (static_cast<int64_t>(sb3) << 16));
+      
+      int32_t sr1 = static_cast<int32_t>(sa1) - static_cast<int32_t>(sb1);
+      int32_t sr2 = static_cast<int32_t>(sa2) - static_cast<int32_t>(sb2);
+      int32_t sr3 = static_cast<int32_t>(sa3) - static_cast<int32_t>(sb3);
+      int32_t sr4 = static_cast<int32_t>(sa4) - static_cast<int32_t>(sb4);
+      
+      if (sr1 > INT16_MAX) sr1 = INT16_MAX; else if (sr1 < INT16_MIN) sr1 = INT16_MIN;
+      if (sr2 > INT16_MAX) sr2 = INT16_MAX; else if (sr2 < INT16_MIN) sr2 = INT16_MIN;
+      if (sr3 > INT16_MAX) sr3 = INT16_MAX; else if (sr3 < INT16_MIN) sr3 = INT16_MIN;
+      if (sr4 > INT16_MAX) sr4 = INT16_MAX; else if (sr4 < INT16_MIN) sr4 = INT16_MIN;
+
+      int64_t sr = (static_cast<int64_t>(sr1) << 48) |
+                   ((static_cast<int64_t>(sr2) & 0xFFFFLL) << 32) |
+                   ((static_cast<int64_t>(sr3) & 0xFFFFLL) << 16) |
+                   (static_cast<int64_t>(sr4) & 0xFFFFLL);
+      return {sr, false};
+    }
+    case AluOp::kMul_simd16:{
+      auto sa = static_cast<int64_t>(a);
+      auto sb = static_cast<int64_t>(b);
+      
+      auto sa1 = static_cast<int16_t>(sa >> 48);
+      auto sa_rem48 = sa - (static_cast<int64_t>(sa1) << 48);
+      auto sa2 = static_cast<int16_t>(sa_rem48 >> 32);
+      auto sa_rem32 = sa_rem48 - (static_cast<int64_t>(sa2) << 32);
+      auto sa3 = static_cast<int16_t>(sa_rem32 >> 16);
+      auto sa4 = static_cast<int16_t>(sa_rem32 - (static_cast<int64_t>(sa3) << 16));
+      
+      auto sb1 = static_cast<int16_t>(sb >> 48);
+      auto sb_rem48 = sb - (static_cast<int64_t>(sb1) << 48);
+      auto sb2 = static_cast<int16_t>(sb_rem48 >> 32);
+      auto sb_rem32 = sb_rem48 - (static_cast<int64_t>(sb2) << 32);
+      auto sb3 = static_cast<int16_t>(sb_rem32 >> 16);
+      auto sb4 = static_cast<int16_t>(sb_rem32 - (static_cast<int64_t>(sb3) << 16));
+      
+      int32_t sr1 = static_cast<int32_t>(sa1) * static_cast<int32_t>(sb1);
+      int32_t sr2 = static_cast<int32_t>(sa2) * static_cast<int32_t>(sb2);
+      int32_t sr3 = static_cast<int32_t>(sa3) * static_cast<int32_t>(sb3);
+      int32_t sr4 = static_cast<int32_t>(sa4) * static_cast<int32_t>(sb4);
+      
+      if (sr1 > INT16_MAX) sr1 = INT16_MAX; else if (sr1 < INT16_MIN) sr1 = INT16_MIN;
+      if (sr2 > INT16_MAX) sr2 = INT16_MAX; else if (sr2 < INT16_MIN) sr2 = INT16_MIN;
+      if (sr3 > INT16_MAX) sr3 = INT16_MAX; else if (sr3 < INT16_MIN) sr3 = INT16_MIN;
+      if (sr4 > INT16_MAX) sr4 = INT16_MAX; else if (sr4 < INT16_MIN) sr4 = INT16_MIN;
+
+      int64_t sr = (static_cast<int64_t>(sr1) << 48) |
+                   ((static_cast<int64_t>(sr2) & 0xFFFFLL) << 32) |
+                   ((static_cast<int64_t>(sr3) & 0xFFFFLL) << 16) |
+                   (static_cast<int64_t>(sr4) & 0xFFFFLL);
+      return {sr, false};
+    }
+    case AluOp::kLoad_simd16:{
+       
+        return {0, false};
+    }
+    case AluOp::kDiv_simd16:{
+      auto sa = static_cast<int64_t>(a);
+      auto sb = static_cast<int64_t>(b);
+      
+      auto sa1 = static_cast<int16_t>(sa >> 48);
+      auto sa_rem48 = sa - (static_cast<int64_t>(sa1) << 48);
+      auto sa2 = static_cast<int16_t>(sa_rem48 >> 32);
+      auto sa_rem32 = sa_rem48 - (static_cast<int64_t>(sa2) << 32);
+      auto sa3 = static_cast<int16_t>(sa_rem32 >> 16);
+      auto sa4 = static_cast<int16_t>(sa_rem32 - (static_cast<int64_t>(sa3) << 16));
+      
+      auto sb1 = static_cast<int16_t>(sb >> 48);
+      auto sb_rem48 = sb - (static_cast<int64_t>(sb1) << 48);
+      auto sb2 = static_cast<int16_t>(sb_rem48 >> 32);
+      auto sb_rem32 = sb_rem48 - (static_cast<int64_t>(sb2) << 32);
+      auto sb3 = static_cast<int16_t>(sb_rem32 >> 16);
+      auto sb4 = static_cast<int16_t>(sb_rem32 - (static_cast<int64_t>(sb3) << 16));
+      
+      // Per-lane check for division by zero
+      int32_t sr1 = (sb1 == 0) ? 0 : (static_cast<int32_t>(sa1) / static_cast<int32_t>(sb1));
+      int32_t sr2 = (sb2 == 0) ? 0 : (static_cast<int32_t>(sa2) / static_cast<int32_t>(sb2));
+      int32_t sr3 = (sb3 == 0) ? 0 : (static_cast<int32_t>(sa3) / static_cast<int32_t>(sb3));
+      int32_t sr4 = (sb4 == 0) ? 0 : (static_cast<int32_t>(sa4) / static_cast<int32_t>(sb4));
+      
+      if (sr1 > INT16_MAX) sr1 = INT16_MAX; else if (sr1 < INT16_MIN) sr1 = INT16_MIN;
+      if (sr2 > INT16_MAX) sr2 = INT16_MAX; else if (sr2 < INT16_MIN) sr2 = INT16_MIN;
+      if (sr3 > INT16_MAX) sr3 = INT16_MAX; else if (sr3 < INT16_MIN) sr3 = INT16_MIN;
+      if (sr4 > INT16_MAX) sr4 = INT16_MAX; else if (sr4 < INT16_MIN) sr4 = INT16_MIN;
+
+      int64_t sr = (static_cast<int64_t>(sr1) << 48) |
+                   ((static_cast<int64_t>(sr2) & 0xFFFFLL) << 32) |
+                   ((static_cast<int64_t>(sr3) & 0xFFFFLL) << 16) |
+                   (static_cast<int64_t>(sr4) & 0xFFFFLL);
+      return {sr, false};
+    }
+    case AluOp::kRem_simd16:{
+      auto sa = static_cast<int64_t>(a);
+      auto sb = static_cast<int64_t>(b);
+      
+      auto sa1 = static_cast<int16_t>(sa >> 48);
+      auto sa_rem48 = sa - (static_cast<int64_t>(sa1) << 48);
+      auto sa2 = static_cast<int16_t>(sa_rem48 >> 32);
+      auto sa_rem32 = sa_rem48 - (static_cast<int64_t>(sa2) << 32);
+      auto sa3 = static_cast<int16_t>(sa_rem32 >> 16);
+      auto sa4 = static_cast<int16_t>(sa_rem32 - (static_cast<int64_t>(sa3) << 16));
+      
+      auto sb1 = static_cast<int16_t>(sb >> 48);
+      auto sb_rem48 = sb - (static_cast<int64_t>(sb1) << 48);
+      auto sb2 = static_cast<int16_t>(sb_rem48 >> 32);
+      auto sb_rem32 = sb_rem48 - (static_cast<int64_t>(sb2) << 32);
+      auto sb3 = static_cast<int16_t>(sb_rem32 >> 16);
+      auto sb4 = static_cast<int16_t>(sb_rem32 - (static_cast<int64_t>(sb3) << 16));
+      
+      // Per-lane check for division by zero
+      int32_t sr1 = (sb1 == 0) ? 0 : (static_cast<int32_t>(sa1) % static_cast<int32_t>(sb1));
+      int32_t sr2 = (sb2 == 0) ? 0 : (static_cast<int32_t>(sa2) % static_cast<int32_t>(sb2));
+      int32_t sr3 = (sb3 == 0) ? 0 : (static_cast<int32_t>(sa3) % static_cast<int32_t>(sb3));
+      int32_t sr4 = (sb4 == 0) ? 0 : (static_cast<int32_t>(sa4) % static_cast<int32_t>(sb4));
+      
+      if (sr1 > INT16_MAX) sr1 = INT16_MAX; else if (sr1 < INT16_MIN) sr1 = INT16_MIN;
+      if (sr2 > INT16_MAX) sr2 = INT16_MAX; else if (sr2 < INT16_MIN) sr2 = INT16_MIN;
+      if (sr3 > INT16_MAX) sr3 = INT16_MAX; else if (sr3 < INT16_MIN) sr3 = INT16_MIN;
+      if (sr4 > INT16_MAX) sr4 = INT16_MAX; else if (sr4 < INT16_MIN) sr4 = INT16_MIN;
+
+      int64_t sr = (static_cast<int64_t>(sr1) << 48) |
+                   ((static_cast<int64_t>(sr2) & 0xFFFFLL) << 32) |
+                   ((static_cast<int64_t>(sr3) & 0xFFFFLL) << 16) |
+                   (static_cast<int64_t>(sr4) & 0xFFFFLL);
+      return {sr, false};
+    }
+   
+    
+    case AluOp::kAdd_simd8:{
+      auto sa = static_cast<int64_t>(a);
+      auto sb = static_cast<int64_t>(b);
+
+      // Extract 8 8-bit lanes from a
+      auto sa1 = static_cast<int8_t>(sa >> 56);
+      auto sa_rem56 = sa - (static_cast<int64_t>(sa1) << 56);
+      auto sa2 = static_cast<int8_t>(sa_rem56 >> 48);
+      auto sa_rem48 = sa_rem56 - (static_cast<int64_t>(sa2) << 48);
+      auto sa3 = static_cast<int8_t>(sa_rem48 >> 40);
+      auto sa_rem40 = sa_rem48 - (static_cast<int64_t>(sa3) << 40);
+      auto sa4 = static_cast<int8_t>(sa_rem40 >> 32);
+      auto sa_rem32 = sa_rem40 - (static_cast<int64_t>(sa4) << 32);
+      auto sa5 = static_cast<int8_t>(sa_rem32 >> 24);
+      auto sa_rem24 = sa_rem32 - (static_cast<int64_t>(sa5) << 24);
+      auto sa6 = static_cast<int8_t>(sa_rem24 >> 16);
+      auto sa_rem16 = sa_rem24 - (static_cast<int64_t>(sa6) << 16);
+      auto sa7 = static_cast<int8_t>(sa_rem16 >> 8);
+      auto sa8 = static_cast<int8_t>(sa_rem16 - (static_cast<int64_t>(sa7) << 8));
+
+      // Extract 8 8-bit lanes from b
+      auto sb1 = static_cast<int8_t>(sb >> 56);
+      auto sb_rem56 = sb - (static_cast<int64_t>(sb1) << 56);
+      auto sb2 = static_cast<int8_t>(sb_rem56 >> 48);
+      auto sb_rem48 = sb_rem56 - (static_cast<int64_t>(sb2) << 48);
+      auto sb3 = static_cast<int8_t>(sb_rem48 >> 40);
+      auto sb_rem40 = sb_rem48 - (static_cast<int64_t>(sb3) << 40);
+      auto sb4 = static_cast<int8_t>(sb_rem40 >> 32);
+      auto sb_rem32 = sb_rem40 - (static_cast<int64_t>(sb4) << 32);
+      auto sb5 = static_cast<int8_t>(sb_rem32 >> 24);
+      auto sb_rem24 = sb_rem32 - (static_cast<int64_t>(sb5) << 24);
+      auto sb6 = static_cast<int8_t>(sb_rem24 >> 16);
+      auto sb_rem16 = sb_rem24 - (static_cast<int64_t>(sb6) << 16);
+      auto sb7 = static_cast<int8_t>(sb_rem16 >> 8);
+      auto sb8 = static_cast<int8_t>(sb_rem16 - (static_cast<int64_t>(sb7) << 8));
+      
+      // Perform operations, using int16_t for intermediate results
+      int16_t sr1 = static_cast<int16_t>(sa1) + static_cast<int16_t>(sb1);
+      int16_t sr2 = static_cast<int16_t>(sa2) + static_cast<int16_t>(sb2);
+      int16_t sr3 = static_cast<int16_t>(sa3) + static_cast<int16_t>(sb3);
+      int16_t sr4 = static_cast<int16_t>(sa4) + static_cast<int16_t>(sb4);
+      int16_t sr5 = static_cast<int16_t>(sa5) + static_cast<int16_t>(sb5);
+      int16_t sr6 = static_cast<int16_t>(sa6) + static_cast<int16_t>(sb6);
+      int16_t sr7 = static_cast<int16_t>(sa7) + static_cast<int16_t>(sb7);
+      int16_t sr8 = static_cast<int16_t>(sa8) + static_cast<int16_t>(sb8);
+
+      // Saturate results to 8-bit range
+      if (sr1 > INT8_MAX) sr1 = INT8_MAX; else if (sr1 < INT8_MIN) sr1 = INT8_MIN;
+      if (sr2 > INT8_MAX) sr2 = INT8_MAX; else if (sr2 < INT8_MIN) sr2 = INT8_MIN;
+      if (sr3 > INT8_MAX) sr3 = INT8_MAX; else if (sr3 < INT8_MIN) sr3 = INT8_MIN;
+      if (sr4 > INT8_MAX) sr4 = INT8_MAX; else if (sr4 < INT8_MIN) sr4 = INT8_MIN;
+      if (sr5 > INT8_MAX) sr5 = INT8_MAX; else if (sr5 < INT8_MIN) sr5 = INT8_MIN;
+      if (sr6 > INT8_MAX) sr6 = INT8_MAX; else if (sr6 < INT8_MIN) sr6 = INT8_MIN;
+      if (sr7 > INT8_MAX) sr7 = INT8_MAX; else if (sr7 < INT8_MIN) sr7 = INT8_MIN;
+      if (sr8 > INT8_MAX) sr8 = INT8_MAX; else if (sr8 < INT8_MIN) sr8 = INT8_MIN;
+
+      // Pack results back into int64_t
+      int64_t sr = (static_cast<int64_t>(sr1) << 56) |
+                   ((static_cast<int64_t>(sr2) & 0xFFLL) << 48) |
+                   ((static_cast<int64_t>(sr3) & 0xFFLL) << 40) |
+                   ((static_cast<int64_t>(sr4) & 0xFFLL) << 32) |
+                   ((static_cast<int64_t>(sr5) & 0xFFLL) << 24) |
+                   ((static_cast<int64_t>(sr6) & 0xFFLL) << 16) |
+                   ((static_cast<int64_t>(sr7) & 0xFFLL) << 8)  |
+                   (static_cast<int64_t>(sr8) & 0xFFLL);
+      return {sr, false};
+    }
+    case AluOp::kSub_simd8:{
+      auto sa = static_cast<int64_t>(a);
+      auto sb = static_cast<int64_t>(b);
+
+      auto sa1 = static_cast<int8_t>(sa >> 56);
+      auto sa_rem56 = sa - (static_cast<int64_t>(sa1) << 56);
+      auto sa2 = static_cast<int8_t>(sa_rem56 >> 48);
+      auto sa_rem48 = sa_rem56 - (static_cast<int64_t>(sa2) << 48);
+      auto sa3 = static_cast<int8_t>(sa_rem48 >> 40);
+      auto sa_rem40 = sa_rem48 - (static_cast<int64_t>(sa3) << 40);
+      auto sa4 = static_cast<int8_t>(sa_rem40 >> 32);
+      auto sa_rem32 = sa_rem40 - (static_cast<int64_t>(sa4) << 32);
+      auto sa5 = static_cast<int8_t>(sa_rem32 >> 24);
+      auto sa_rem24 = sa_rem32 - (static_cast<int64_t>(sa5) << 24);
+      auto sa6 = static_cast<int8_t>(sa_rem24 >> 16);
+      auto sa_rem16 = sa_rem24 - (static_cast<int64_t>(sa6) << 16);
+      auto sa7 = static_cast<int8_t>(sa_rem16 >> 8);
+      auto sa8 = static_cast<int8_t>(sa_rem16 - (static_cast<int64_t>(sa7) << 8));
+
+      auto sb1 = static_cast<int8_t>(sb >> 56);
+      auto sb_rem56 = sb - (static_cast<int64_t>(sb1) << 56);
+      auto sb2 = static_cast<int8_t>(sb_rem56 >> 48);
+      auto sb_rem48 = sb_rem56 - (static_cast<int64_t>(sb2) << 48);
+      auto sb3 = static_cast<int8_t>(sb_rem48 >> 40);
+      auto sb_rem40 = sb_rem48 - (static_cast<int64_t>(sb3) << 40);
+      auto sb4 = static_cast<int8_t>(sb_rem40 >> 32);
+      auto sb_rem32 = sb_rem40 - (static_cast<int64_t>(sb4) << 32);
+      auto sb5 = static_cast<int8_t>(sb_rem32 >> 24);
+      auto sb_rem24 = sb_rem32 - (static_cast<int64_t>(sb5) << 24);
+      auto sb6 = static_cast<int8_t>(sb_rem24 >> 16);
+      auto sb_rem16 = sb_rem24 - (static_cast<int64_t>(sb6) << 16);
+      auto sb7 = static_cast<int8_t>(sb_rem16 >> 8);
+      auto sb8 = static_cast<int8_t>(sb_rem16 - (static_cast<int64_t>(sb7) << 8));
+      
+      int16_t sr1 = static_cast<int16_t>(sa1) - static_cast<int16_t>(sb1);
+      int16_t sr2 = static_cast<int16_t>(sa2) - static_cast<int16_t>(sb2);
+      int16_t sr3 = static_cast<int16_t>(sa3) - static_cast<int16_t>(sb3);
+      int16_t sr4 = static_cast<int16_t>(sa4) - static_cast<int16_t>(sb4);
+      int16_t sr5 = static_cast<int16_t>(sa5) - static_cast<int16_t>(sb5);
+      int16_t sr6 = static_cast<int16_t>(sa6) - static_cast<int16_t>(sb6);
+      int16_t sr7 = static_cast<int16_t>(sa7) - static_cast<int16_t>(sb7);
+      int16_t sr8 = static_cast<int16_t>(sa8) - static_cast<int16_t>(sb8);
+
+      if (sr1 > INT8_MAX) sr1 = INT8_MAX; else if (sr1 < INT8_MIN) sr1 = INT8_MIN;
+      if (sr2 > INT8_MAX) sr2 = INT8_MAX; else if (sr2 < INT8_MIN) sr2 = INT8_MIN;
+      if (sr3 > INT8_MAX) sr3 = INT8_MAX; else if (sr3 < INT8_MIN) sr3 = INT8_MIN;
+      if (sr4 > INT8_MAX) sr4 = INT8_MAX; else if (sr4 < INT8_MIN) sr4 = INT8_MIN;
+      if (sr5 > INT8_MAX) sr5 = INT8_MAX; else if (sr5 < INT8_MIN) sr5 = INT8_MIN;
+      if (sr6 > INT8_MAX) sr6 = INT8_MAX; else if (sr6 < INT8_MIN) sr6 = INT8_MIN;
+      if (sr7 > INT8_MAX) sr7 = INT8_MAX; else if (sr7 < INT8_MIN) sr7 = INT8_MIN;
+      if (sr8 > INT8_MAX) sr8 = INT8_MAX; else if (sr8 < INT8_MIN) sr8 = INT8_MIN;
+
+      int64_t sr = (static_cast<int64_t>(sr1) << 56) |
+                   ((static_cast<int64_t>(sr2) & 0xFFLL) << 48) |
+                   ((static_cast<int64_t>(sr3) & 0xFFLL) << 40) |
+                   ((static_cast<int64_t>(sr4) & 0xFFLL) << 32) |
+                   ((static_cast<int64_t>(sr5) & 0xFFLL) << 24) |
+                   ((static_cast<int64_t>(sr6) & 0xFFLL) << 16) |
+                   ((static_cast<int64_t>(sr7) & 0xFFLL) << 8)  |
+                   (static_cast<int64_t>(sr8) & 0xFFLL);
+      return {sr, false};
+    }
+    case AluOp::kMul_simd8:{
+      auto sa = static_cast<int64_t>(a);
+      auto sb = static_cast<int64_t>(b);
+
+      auto sa1 = static_cast<int8_t>(sa >> 56);
+      auto sa_rem56 = sa - (static_cast<int64_t>(sa1) << 56);
+      auto sa2 = static_cast<int8_t>(sa_rem56 >> 48);
+      auto sa_rem48 = sa_rem56 - (static_cast<int64_t>(sa2) << 48);
+      auto sa3 = static_cast<int8_t>(sa_rem48 >> 40);
+      auto sa_rem40 = sa_rem48 - (static_cast<int64_t>(sa3) << 40);
+      auto sa4 = static_cast<int8_t>(sa_rem40 >> 32);
+      auto sa_rem32 = sa_rem40 - (static_cast<int64_t>(sa4) << 32);
+      auto sa5 = static_cast<int8_t>(sa_rem32 >> 24);
+      auto sa_rem24 = sa_rem32 - (static_cast<int64_t>(sa5) << 24);
+      auto sa6 = static_cast<int8_t>(sa_rem24 >> 16);
+      auto sa_rem16 = sa_rem24 - (static_cast<int64_t>(sa6) << 16);
+      auto sa7 = static_cast<int8_t>(sa_rem16 >> 8);
+      auto sa8 = static_cast<int8_t>(sa_rem16 - (static_cast<int64_t>(sa7) << 8));
+
+      auto sb1 = static_cast<int8_t>(sb >> 56);
+      auto sb_rem56 = sb - (static_cast<int64_t>(sb1) << 56);
+      auto sb2 = static_cast<int8_t>(sb_rem56 >> 48);
+      auto sb_rem48 = sb_rem56 - (static_cast<int64_t>(sb2) << 48);
+      auto sb3 = static_cast<int8_t>(sb_rem48 >> 40);
+      auto sb_rem40 = sb_rem48 - (static_cast<int64_t>(sb3) << 40);
+      auto sb4 = static_cast<int8_t>(sb_rem40 >> 32);
+      auto sb_rem32 = sb_rem40 - (static_cast<int64_t>(sb4) << 32);
+      auto sb5 = static_cast<int8_t>(sb_rem32 >> 24);
+      auto sb_rem24 = sb_rem32 - (static_cast<int64_t>(sb5) << 24);
+      auto sb6 = static_cast<int8_t>(sb_rem24 >> 16);
+      auto sb_rem16 = sb_rem24 - (static_cast<int64_t>(sb6) << 16);
+      auto sb7 = static_cast<int8_t>(sb_rem16 >> 8);
+      auto sb8 = static_cast<int8_t>(sb_rem16 - (static_cast<int64_t>(sb7) << 8));
+      
+      int16_t sr1 = static_cast<int16_t>(sa1) * static_cast<int16_t>(sb1);
+      int16_t sr2 = static_cast<int16_t>(sa2) * static_cast<int16_t>(sb2);
+      int16_t sr3 = static_cast<int16_t>(sa3) * static_cast<int16_t>(sb3);
+      int16_t sr4 = static_cast<int16_t>(sa4) * static_cast<int16_t>(sb4);
+      int16_t sr5 = static_cast<int16_t>(sa5) * static_cast<int16_t>(sb5);
+      int16_t sr6 = static_cast<int16_t>(sa6) * static_cast<int16_t>(sb6);
+      int16_t sr7 = static_cast<int16_t>(sa7) * static_cast<int16_t>(sb7);
+      int16_t sr8 = static_cast<int16_t>(sa8) * static_cast<int16_t>(sb8);
+
+      if (sr1 > INT8_MAX) sr1 = INT8_MAX; else if (sr1 < INT8_MIN) sr1 = INT8_MIN;
+      if (sr2 > INT8_MAX) sr2 = INT8_MAX; else if (sr2 < INT8_MIN) sr2 = INT8_MIN;
+      if (sr3 > INT8_MAX) sr3 = INT8_MAX; else if (sr3 < INT8_MIN) sr3 = INT8_MIN;
+      if (sr4 > INT8_MAX) sr4 = INT8_MAX; else if (sr4 < INT8_MIN) sr4 = INT8_MIN;
+      if (sr5 > INT8_MAX) sr5 = INT8_MAX; else if (sr5 < INT8_MIN) sr5 = INT8_MIN;
+      if (sr6 > INT8_MAX) sr6 = INT8_MAX; else if (sr6 < INT8_MIN) sr6 = INT8_MIN;
+      if (sr7 > INT8_MAX) sr7 = INT8_MAX; else if (sr7 < INT8_MIN) sr7 = INT8_MIN;
+      if (sr8 > INT8_MAX) sr8 = INT8_MAX; else if (sr8 < INT8_MIN) sr8 = INT8_MIN;
+
+      int64_t sr = (static_cast<int64_t>(sr1) << 56) |
+                   ((static_cast<int64_t>(sr2) & 0xFFLL) << 48) |
+                   ((static_cast<int64_t>(sr3) & 0xFFLL) << 40) |
+                   ((static_cast<int64_t>(sr4) & 0xFFLL) << 32) |
+                   ((static_cast<int64_t>(sr5) & 0xFFLL) << 24) |
+                   ((static_cast<int64_t>(sr6) & 0xFFLL) << 16) |
+                   ((static_cast<int64_t>(sr7) & 0xFFLL) << 8)  |
+                   (static_cast<int64_t>(sr8) & 0xFFLL);
+      return {sr, false};
+    }
+    case AluOp::kLoad_simd8:{
+        // As requested, left empty
+        return {0, false};
+    }
+    case AluOp::kDiv_simd8:{
+      auto sa = static_cast<int64_t>(a);
+      auto sb = static_cast<int64_t>(b);
+
+      auto sa1 = static_cast<int8_t>(sa >> 56);
+      auto sa_rem56 = sa - (static_cast<int64_t>(sa1) << 56);
+      auto sa2 = static_cast<int8_t>(sa_rem56 >> 48);
+      auto sa_rem48 = sa_rem56 - (static_cast<int64_t>(sa2) << 48);
+      auto sa3 = static_cast<int8_t>(sa_rem48 >> 40);
+      auto sa_rem40 = sa_rem48 - (static_cast<int64_t>(sa3) << 40);
+      auto sa4 = static_cast<int8_t>(sa_rem40 >> 32);
+      auto sa_rem32 = sa_rem40 - (static_cast<int64_t>(sa4) << 32);
+      auto sa5 = static_cast<int8_t>(sa_rem32 >> 24);
+      auto sa_rem24 = sa_rem32 - (static_cast<int64_t>(sa5) << 24);
+      auto sa6 = static_cast<int8_t>(sa_rem24 >> 16);
+      auto sa_rem16 = sa_rem24 - (static_cast<int64_t>(sa6) << 16);
+      auto sa7 = static_cast<int8_t>(sa_rem16 >> 8);
+      auto sa8 = static_cast<int8_t>(sa_rem16 - (static_cast<int64_t>(sa7) << 8));
+
+      auto sb1 = static_cast<int8_t>(sb >> 56);
+      auto sb_rem56 = sb - (static_cast<int64_t>(sb1) << 56);
+      auto sb2 = static_cast<int8_t>(sb_rem56 >> 48);
+      auto sb_rem48 = sb_rem56 - (static_cast<int64_t>(sb2) << 48);
+      auto sb3 = static_cast<int8_t>(sb_rem48 >> 40);
+      auto sb_rem40 = sb_rem48 - (static_cast<int64_t>(sb3) << 40);
+      auto sb4 = static_cast<int8_t>(sb_rem40 >> 32);
+      auto sb_rem32 = sb_rem40 - (static_cast<int64_t>(sb4) << 32);
+      auto sb5 = static_cast<int8_t>(sb_rem32 >> 24);
+      auto sb_rem24 = sb_rem32 - (static_cast<int64_t>(sb5) << 24);
+      auto sb6 = static_cast<int8_t>(sb_rem24 >> 16);
+      auto sb_rem16 = sb_rem24 - (static_cast<int64_t>(sb6) << 16);
+      auto sb7 = static_cast<int8_t>(sb_rem16 >> 8);
+      auto sb8 = static_cast<int8_t>(sb_rem16 - (static_cast<int64_t>(sb7) << 8));
+      
+      // Per-lane check for division by zero
+      int16_t sr1 = (sb1 == 0) ? 0 : (static_cast<int16_t>(sa1) / static_cast<int16_t>(sb1));
+      int16_t sr2 = (sb2 == 0) ? 0 : (static_cast<int16_t>(sa2) / static_cast<int16_t>(sb2));
+      int16_t sr3 = (sb3 == 0) ? 0 : (static_cast<int16_t>(sa3) / static_cast<int16_t>(sb3));
+      int16_t sr4 = (sb4 == 0) ? 0 : (static_cast<int16_t>(sa4) / static_cast<int16_t>(sb4));
+      int16_t sr5 = (sb5 == 0) ? 0 : (static_cast<int16_t>(sa5) / static_cast<int16_t>(sb5));
+      int16_t sr6 = (sb6 == 0) ? 0 : (static_cast<int16_t>(sa6) / static_cast<int16_t>(sb6));
+      int16_t sr7 = (sb7 == 0) ? 0 : (static_cast<int16_t>(sa7) / static_cast<int16_t>(sb7));
+      int16_t sr8 = (sb8 == 0) ? 0 : (static_cast<int16_t>(sa8) / static_cast<int16_t>(sb8));
+
+      if (sr1 > INT8_MAX) sr1 = INT8_MAX; else if (sr1 < INT8_MIN) sr1 = INT8_MIN;
+      if (sr2 > INT8_MAX) sr2 = INT8_MAX; else if (sr2 < INT8_MIN) sr2 = INT8_MIN;
+      if (sr3 > INT8_MAX) sr3 = INT8_MAX; else if (sr3 < INT8_MIN) sr3 = INT8_MIN;
+      if (sr4 > INT8_MAX) sr4 = INT8_MAX; else if (sr4 < INT8_MIN) sr4 = INT8_MIN;
+      if (sr5 > INT8_MAX) sr5 = INT8_MAX; else if (sr5 < INT8_MIN) sr5 = INT8_MIN;
+      if (sr6 > INT8_MAX) sr6 = INT8_MAX; else if (sr6 < INT8_MIN) sr6 = INT8_MIN;
+      if (sr7 > INT8_MAX) sr7 = INT8_MAX; else if (sr7 < INT8_MIN) sr7 = INT8_MIN;
+      if (sr8 > INT8_MAX) sr8 = INT8_MAX; else if (sr8 < INT8_MIN) sr8 = INT8_MIN;
+
+      int64_t sr = (static_cast<int64_t>(sr1) << 56) |
+                   ((static_cast<int64_t>(sr2) & 0xFFLL) << 48) |
+                   ((static_cast<int64_t>(sr3) & 0xFFLL) << 40) |
+                   ((static_cast<int64_t>(sr4) & 0xFFLL) << 32) |
+                   ((static_cast<int64_t>(sr5) & 0xFFLL) << 24) |
+                   ((static_cast<int64_t>(sr6) & 0xFFLL) << 16) |
+                   ((static_cast<int64_t>(sr7) & 0xFFLL) << 8)  |
+                   (static_cast<int64_t>(sr8) & 0xFFLL);
+      return {sr, false};
+    }
+    case AluOp::kRem_simd8:{
+      auto sa = static_cast<int64_t>(a);
+      auto sb = static_cast<int64_t>(b);
+
+      auto sa1 = static_cast<int8_t>(sa >> 56);
+      auto sa_rem56 = sa - (static_cast<int64_t>(sa1) << 56);
+      auto sa2 = static_cast<int8_t>(sa_rem56 >> 48);
+      auto sa_rem48 = sa_rem56 - (static_cast<int64_t>(sa2) << 48);
+      auto sa3 = static_cast<int8_t>(sa_rem48 >> 40);
+      auto sa_rem40 = sa_rem48 - (static_cast<int64_t>(sa3) << 40);
+      auto sa4 = static_cast<int8_t>(sa_rem40 >> 32);
+      auto sa_rem32 = sa_rem40 - (static_cast<int64_t>(sa4) << 32);
+      auto sa5 = static_cast<int8_t>(sa_rem32 >> 24);
+      auto sa_rem24 = sa_rem32 - (static_cast<int64_t>(sa5) << 24);
+      auto sa6 = static_cast<int8_t>(sa_rem24 >> 16);
+      auto sa_rem16 = sa_rem24 - (static_cast<int64_t>(sa6) << 16);
+      auto sa7 = static_cast<int8_t>(sa_rem16 >> 8);
+      auto sa8 = static_cast<int8_t>(sa_rem16 - (static_cast<int64_t>(sa7) << 8));
+
+      auto sb1 = static_cast<int8_t>(sb >> 56);
+      auto sb_rem56 = sb - (static_cast<int64_t>(sb1) << 56);
+      auto sb2 = static_cast<int8_t>(sb_rem56 >> 48);
+      auto sb_rem48 = sb_rem56 - (static_cast<int64_t>(sb2) << 48);
+      auto sb3 = static_cast<int8_t>(sb_rem48 >> 40);
+      auto sb_rem40 = sb_rem48 - (static_cast<int64_t>(sb3) << 40);
+      auto sb4 = static_cast<int8_t>(sb_rem40 >> 32);
+      auto sb_rem32 = sb_rem40 - (static_cast<int64_t>(sb4) << 32);
+      auto sb5 = static_cast<int8_t>(sb_rem32 >> 24);
+      auto sb_rem24 = sb_rem32 - (static_cast<int64_t>(sb5) << 24);
+      auto sb6 = static_cast<int8_t>(sb_rem24 >> 16);
+      auto sb_rem16 = sb_rem24 - (static_cast<int64_t>(sb6) << 16);
+      auto sb7 = static_cast<int8_t>(sb_rem16 >> 8);
+      auto sb8 = static_cast<int8_t>(sb_rem16 - (static_cast<int64_t>(sb7) << 8));
+      
+      // Per-lane check for division by zero
+      int16_t sr1 = (sb1 == 0) ? 0 : (static_cast<int16_t>(sa1) % static_cast<int16_t>(sb1));
+      int16_t sr2 = (sb2 == 0) ? 0 : (static_cast<int16_t>(sa2) % static_cast<int16_t>(sb2));
+      int16_t sr3 = (sb3 == 0) ? 0 : (static_cast<int16_t>(sa3) % static_cast<int16_t>(sb3));
+      int16_t sr4 = (sb4 == 0) ? 0 : (static_cast<int16_t>(sa4) % static_cast<int16_t>(sb4));
+      int16_t sr5 = (sb5 == 0) ? 0 : (static_cast<int16_t>(sa5) % static_cast<int16_t>(sb5));
+      int16_t sr6 = (sb6 == 0) ? 0 : (static_cast<int16_t>(sa6) % static_cast<int16_t>(sb6));
+      int16_t sr7 = (sb7 == 0) ? 0 : (static_cast<int16_t>(sa7) % static_cast<int16_t>(sb7));
+      int16_t sr8 = (sb8 == 0) ? 0 : (static_cast<int16_t>(sa8) % static_cast<int16_t>(sb8));
+
+      if (sr1 > INT8_MAX) sr1 = INT8_MAX; else if (sr1 < INT8_MIN) sr1 = INT8_MIN;
+      if (sr2 > INT8_MAX) sr2 = INT8_MAX; else if (sr2 < INT8_MIN) sr2 = INT8_MIN;
+      if (sr3 > INT8_MAX) sr3 = INT8_MAX; else if (sr3 < INT8_MIN) sr3 = INT8_MIN;
+      if (sr4 > INT8_MAX) sr4 = INT8_MAX; else if (sr4 < INT8_MIN) sr4 = INT8_MIN;
+      if (sr5 > INT8_MAX) sr5 = INT8_MAX; else if (sr5 < INT8_MIN) sr5 = INT8_MIN;
+      if (sr6 > INT8_MAX) sr6 = INT8_MAX; else if (sr6 < INT8_MIN) sr6 = INT8_MIN;
+      if (sr7 > INT8_MAX) sr7 = INT8_MAX; else if (sr7 < INT8_MIN) sr7 = INT8_MIN;
+      if (sr8 > INT8_MAX) sr8 = INT8_MAX; else if (sr8 < INT8_MIN) sr8 = INT8_MIN;
+
+      int64_t sr = (static_cast<int64_t>(sr1) << 56) |
+                   ((static_cast<int64_t>(sr2) & 0xFFLL) << 48) |
+                   ((static_cast<int64_t>(sr3) & 0xFFLL) << 40) |
+                   ((static_cast<int64_t>(sr4) & 0xFFLL) << 32) |
+                   ((static_cast<int64_t>(sr5) & 0xFFLL) << 24) |
+                   ((static_cast<int64_t>(sr6) & 0xFFLL) << 16) |
+                   ((static_cast<int64_t>(sr7) & 0xFFLL) << 8)  |
+                   (static_cast<int64_t>(sr8) & 0xFFLL);
+      return {sr, false};
+    }
+    
     case AluOp::kSll: {
       uint64_t result = a << (b & 63);
       return {result, false};
