@@ -153,6 +153,24 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 break;
 
             }
+            case 0b1111111: {// kAdd_simd4
+                return alu::AluOp::kAdd_simd4;
+                break;
+
+            }
+            case 0b0111111: {// kAdd_binary
+                return alu::AluOp::kAdd_binary;
+                break;
+
+            }
+            case 0b0011111: {// kAdd_simd2
+                return alu::AluOp::kAdd_simd2;
+                break;
+
+            }
+            
+            
+
             }
             break;
         }
@@ -167,9 +185,20 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 return alu::AluOp::kMulh;
                 break;
             }
-            case 0b0001111: {
-                return alu::AluOp::kSub_simd32;
+                        case 0b1111111: {// kSub_simd4
+                return alu::AluOp::kSub_simd4;
                 break;
+
+            }
+            case 0b0111111: {// kSub_binary
+                return alu::AluOp::kSub_binary;
+                break;
+
+            }
+            case 0b0011111: {// kSub_simd2
+                return alu::AluOp::kSub_simd2;
+                break;
+
             }
             }
             break;
@@ -185,9 +214,20 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 return alu::AluOp::kMulhsu;
                 break;
             }
-            case 0b0001111: {
-                return alu::AluOp::kMul_simd32;
+                        case 0b1111111: {// kMul_simd4
+                return alu::AluOp::kMul_simd4;
                 break;
+
+            }
+            case 0b0111111: {// kMul_binary
+                return alu::AluOp::kMul_binary;
+                break;
+
+            }
+            case 0b0011111: {// kMul_simd2
+                return alu::AluOp::kMul_simd2;
+                break;
+
             }
             }
             break;
@@ -203,9 +243,20 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 return alu::AluOp::kMulhu;
                 break;
             }
-            case 0b0001111: {
-                return alu::AluOp::kLoad_simd32;
+                        case 0b1111111: {// kDiv_simd4
+                return alu::AluOp::kDiv_simd4;
                 break;
+
+            }
+            case 0b0111111: {// kDiv_binary
+                return alu::AluOp::kDiv_binary;
+                break;
+
+            }
+            case 0b0011111: {// kDiv_simd2
+                return alu::AluOp::kDiv_simd2;
+                break;
+
             }
             }
             break;
@@ -221,6 +272,22 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 return alu::AluOp::kDiv;
                 break;
             }
+                        case 0b1111111: {// kRem_simd4
+                return alu::AluOp::kRem_simd4;
+                break;
+
+            }
+            case 0b0111111: {// kRem_binary
+                return alu::AluOp::kRem_binary;
+                break;
+
+            }
+            case 0b0011111: {// kRem_simd2
+                return alu::AluOp::kRem_simd2;
+                break;
+
+            }
+
             }
             break;
         }
@@ -239,9 +306,20 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 return alu::AluOp::kDivu;
                 break;
             }
-            case 0b0001111: {
-                return alu::AluOp::kDiv_simd32;
+                        case 0b1111111: {// kAnd_simd4
+                return alu::AluOp::kAnd_simd4;
                 break;
+
+            }
+            case 0b0111111: {// kAnd_binary
+                return alu::AluOp::kAnd_binary;
+                break;
+
+            }
+            case 0b0011111: {// kAnd_simd2
+                return alu::AluOp::kAnd_simd2;
+                break;
+
             }
             }
             break;
@@ -257,9 +335,20 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 return alu::AluOp::kRem;
                 break;
             }
-            case 0b0001111: {
-                return alu::AluOp::kRem_simd32;
+                        case 0b1111111: {// kOr_simd4
+                return alu::AluOp::kOr_simd4;
                 break;
+
+            }
+            case 0b0111111: {// kOr_binary
+                return alu::AluOp::kOr_binary;
+                break;
+
+            }
+            case 0b0011111: {// kOr_simd2
+                return alu::AluOp::kOr_simd2;
+                break;
+
             }
             }
             break;
@@ -274,6 +363,21 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
             case 0b0000001: {// kRemu
                 return alu::AluOp::kRemu;
                 break;
+            }
+                        case 0b1111111: {// kXor_simd4
+                return alu::AluOp::kXor_simd4;
+                break;
+
+            }
+            case 0b0111111: {// kXor_binary
+                return alu::AluOp::kXor_binary;
+                break;
+
+            }
+            case 0b0011111: {// kxor_simd2
+                return alu::AluOp::kXor_simd2;
+                break;
+
             }
             }
             break;
@@ -505,12 +609,18 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
     // F extension + D extension
     // TODO: correct this
 
-    case 0b1000011: {
-        return alu::AluOp::kFmadd_s;
-    }
+    // case 0b1000011: {
+    //     return alu::AluOp::kFmadd_s;
+    // } 
 
     case 0b1010011: {
         switch (funct7) {
+            // BFLOAT16 R-TYPE CASES
+            case 0b0011000: return alu::AluOp::FADD_BF16;
+            case 0b0011001: return alu::AluOp::FSUB_BF16;
+            case 0b0011010: return alu::AluOp::FMUL_BF16;
+            case 0b0011011: return alu::AluOp::FMAX_BF16;
+
             case 0b0000000: {// FADD_S
                 return alu::AluOp::FADD_S;
             }
@@ -715,51 +825,89 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 }
                 break;
             }
-            case 0b1000011: { // FMADD.S, FMADD.D
-                switch (funct2) {
-                    case 0b00: {// FMADD.S
-                        return alu::AluOp::kFmadd_s;
-                    }
-                    case 0b01: {// FMADD.D
-                        return alu::AluOp::FMADD_D;
-                    }
-                }
-                break;
+            // delete!
+            // case 0b1000011: { // FMADD.S, FMADD.D
+            //     switch (funct2) {
+            //         case 0b00: {// FMADD.S
+            //             return alu::AluOp::kFmadd_s;
+            //         }
+            //         case 0b01: {// FMADD.D
+            //             return alu::AluOp::FMADD_D;
+            //         }
+            //     }
+            //     break;
+            // }
+            // case 0b1000111: { // FMSUB.S, FMSUB.D
+            //     switch (funct2) {
+            //         case 0b00: {// FMSUB.S
+            //             return alu::AluOp::kFmsub_s;
+            //         }
+            //         case 0b01: {// FMSUB.D
+            //             return alu::AluOp::FMSUB_D;
+            //         }
+            //     }
+            //     break;
+            // }
+            // case 0b1001011: { // FNMADD.S, FNMADD.D
+            //     switch (funct2) {
+            //         case 0b00: {// FNMADD.S
+            //             return alu::AluOp::kFnmadd_s;
+            //         }
+            //         case 0b01: {// FNMADD.D
+            //             return alu::AluOp::FNMADD_D;
+            //         }
+            //     }
+            //     break;
+            // }
+            // case 0b1001111: { // FNMSUB.S, FNMSUB.D
+            //     switch (funct2) {
+            //         case 0b00: {// FNMSUB.S
+            //             return alu::AluOp::kFnmsub_s;
+            //         }
+            //         case 0b01: {// FNMSUB.D
+            //             return alu::AluOp::FNMSUB_D;
+            //         }
+            //     }
+            //     break;
+            // }
+            // R4-Type Opcodes (FMADD, FMSUB, FNMSUB, FNMADD)
+        case 0b1000011: { // FMADD
+            switch (funct2) { // Check fmt
+                case 0b00: return alu::AluOp::kFmadd_s;  // FMADD.S
+                case 0b01: return alu::AluOp::FMADD_D;   // FMADD.D
+                case 0b10: return alu::AluOp::FMADD_BF16; // FMADD.BF16
+                default: return alu::AluOp::kNone;
             }
-            case 0b1000111: { // FMSUB.S, FMSUB.D
-                switch (funct2) {
-                    case 0b00: {// FMSUB.S
-                        return alu::AluOp::kFmsub_s;
-                    }
-                    case 0b01: {// FMSUB.D
-                        return alu::AluOp::FMSUB_D;
-                    }
-                }
-                break;
-            }
-            case 0b1001011: { // FNMADD.S, FNMADD.D
-                switch (funct2) {
-                    case 0b00: {// FNMADD.S
-                        return alu::AluOp::kFnmadd_s;
-                    }
-                    case 0b01: {// FNMADD.D
-                        return alu::AluOp::FNMADD_D;
-                    }
-                }
-                break;
-            }
-            case 0b1001111: { // FNMSUB.S, FNMSUB.D
-                switch (funct2) {
-                    case 0b00: {// FNMSUB.S
-                        return alu::AluOp::kFnmsub_s;
-                    }
-                    case 0b01: {// FNMSUB.D
-                        return alu::AluOp::FNMSUB_D;
-                    }
-                }
-                break;
+            // No break needed after return
+        }
+        case 0b1000111: { // FMSUB
+            switch (funct2) { // Check fmt
+                case 0b00: return alu::AluOp::kFmsub_s;  // FMSUB.S
+                case 0b01: return alu::AluOp::FMSUB_D;   // FMSUB.D
+                // Add case 0b10: return alu::AluOp::kFmsub_bf16; if you define it later
+                default: return alu::AluOp::kNone;
             }
         }
+        case 0b1001011: { // FNMSUB (Opcode from your header file)
+             switch (funct2) { // Check fmt
+                case 0b00: return alu::AluOp::kFnmsub_s; // FNMSUB.S
+                case 0b01: return alu::AluOp::FNMSUB_D;  // FNMSUB.D
+                // Add case 0b10: return alu::AluOp::kFnmsub_bf16; if you define it later
+                default: return alu::AluOp::kNone;
+            }
+        }
+         case 0b1001111: { // FNMADD (Opcode from your header file)
+             switch (funct2) { // Check fmt
+                case 0b00: return alu::AluOp::kFnmadd_s; // FNMADD.S
+                case 0b01: return alu::AluOp::FNMADD_D;  // FNMADD.D
+                // Add case 0b10: return alu::AluOp::kFnmadd_bf16; if you define it later
+                default: return alu::AluOp::kNone;
+            }
+        }
+        }
+
+
+       
         break;
     }
     
