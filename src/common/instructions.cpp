@@ -23,6 +23,46 @@ std::unordered_map<std::string, Instruction> instruction_string_map = {
     {"or", Instruction::kor},
     {"xor", Instruction::kxor},
     {"add_simd32",Instruction::kadd_simd32}, //newly added instruction1
+    {"sub_simd32",Instruction::ksub_simd32}, //newly added instruction2
+    {"mul_simd32",Instruction::kmul_simd32}, //newly added instruction3
+    {"load_simd32",Instruction::kload_simd32}, //newly added instruction4
+    {"rem_simd32",Instruction::krem_simd32}, //newly added instruction5
+    {"div_simd32",Instruction::kdiv_simd32}, //newly added instruction6
+    {"add_simd16",Instruction::kadd_simd16}, //newly added instruction1
+    {"sub_simd16",Instruction::ksub_simd16}, //newly added instruction2
+    {"mul_simd16",Instruction::kmul_simd16}, //newly added instruction3
+    {"load_simd16",Instruction::kload_simd16}, //newly added instruction4
+    {"rem_simd16",Instruction::krem_simd16}, //newly added instruction5
+    {"div_simd16",Instruction::kdiv_simd16}, //newly added instruction6
+
+    {"add_simd8",Instruction::kadd_simd8}, //newly added instruction1
+    {"sub_simd8",Instruction::ksub_simd8}, //newly added instruction2
+    {"mul_simd8",Instruction::kmul_simd8}, //newly added instruction3
+    {"load_simd8",Instruction::kload_simd8}, //newly added instruction4
+    {"rem_simd8",Instruction::krem_simd8}, //newly added instruction5
+    {"div_simd8",Instruction::kdiv_simd8}, //newly added instruction6
+
+
+    {"add_simd4",Instruction::kadd_simd4}, //newly added instruction1
+    {"sub_simd4",Instruction::ksub_simd4}, //newly added instruction2
+    {"mul_simd4",Instruction::kmul_simd4}, //newly added instruction3
+    {"load_simd4",Instruction::kload_simd4}, //newly added instruction4
+    {"rem_simd4",Instruction::krem_simd4}, //newly added instruction5
+    {"div_simd4",Instruction::kdiv_simd4}, //newly added instruction6
+
+    {"add_simd2",Instruction::kadd_simd2}, //newly added instruction1
+    {"sub_simd2",Instruction::ksub_simd2}, //newly added instruction2
+    {"mul_simd2",Instruction::kmul_simd2}, //newly added instruction3
+    {"load_simd2",Instruction::kload_simd2}, //newly added instruction4
+    {"rem_simd2",Instruction::krem_simd2}, //newly added instruction5
+    {"div_simd2",Instruction::kdiv_simd2}, //newly added instruction6
+
+    {"add_simdb",Instruction::kadd_simdb}, //newly added instruction1
+    {"sub_simdb",Instruction::ksub_simdb}, //newly added instruction2
+    {"mul_simdb",Instruction::kmul_simdb}, //newly added instruction3
+    {"load_simdb",Instruction::kload_simdb}, //newly added instruction4
+    {"rem_simdb",Instruction::krem_simdb}, //newly added instruction5
+    {"div_simdb",Instruction::kdiv_simdb}, //newly added instruction6
     {"sll", Instruction::ksll},
     {"srl", Instruction::ksrl},
     {"sra", Instruction::ksra},
@@ -174,63 +214,20 @@ std::unordered_map<std::string, Instruction> instruction_string_map = {
     {"flw", Instruction::kflw},
     {"fsw", Instruction::kfsw},
     {"fld", Instruction::kfld},
-    {"fsd", Instruction::kfsd},
-
-    // SIMD 4
-
-    {"add_simd4",Instruction::kadd_simd4},
-    {"sub_simd4",Instruction::ksub_simd4},
-    {"mul_simd4",Instruction::kmul_simd4},
-    {"div_simd4",Instruction::kdiv_simd4},
-    {"rem_simd4",Instruction::krem_simd4},
-    {"and_simd4",Instruction::kand_simd4},
-    {"or_simd4",Instruction::kor_simd4},
-    {"xor_simd4",Instruction::kxor_simd4},
-
-    // SIMD 2
-
-    {"add_simd2",Instruction::kadd_simd2},
-    {"sub_simd2",Instruction::ksub_simd2},
-    {"mul_simd2",Instruction::kmul_simd2},
-    {"div_simd2",Instruction::kdiv_simd2},
-    {"rem_simd2",Instruction::krem_simd2},
-    {"and_simd2",Instruction::kand_simd2},
-    {"or_simd2",Instruction::kor_simd2},
-    {"xor_simd2",Instruction::kxor_simd2},
-
-    // SIMD 1 Binary
-
-    {"add_binary",Instruction::kadd_binary},
-    {"sub_binary",Instruction::ksub_binary},
-    {"mul_binary",Instruction::kmul_binary},
-    {"div_binary",Instruction::kdiv_binary},
-    {"rem_binary",Instruction::krem_binary},
-    {"and_binary",Instruction::kand_binary},
-    {"or_binary",Instruction::kor_binary},
-    {"xor_binary",Instruction::kxor_binary},
-
-
-    // BFloat16 Instructions
-    {"fadd.bf16", Instruction::kfadd_bf16},
-    {"fsub.bf16", Instruction::kfsub_bf16},
-    {"fmul.bf16", Instruction::kfmul_bf16},
-    {"fmax.bf16", Instruction::kfmax_bf16},
-    {"fmadd.bf16", Instruction::kfmadd_bf16},
-
-    // Float16 (fp16) SIMD Instructions
-    {"fadd.fp16", Instruction::kfadd_fp16},
-    {"fsub.fp16", Instruction::kfsub_fp16},
-    {"fmul.fp16", Instruction::kfmul_fp16},
-    {"fmax.fp16", Instruction::kfmax_fp16},
-    {"fdot.fp16", Instruction::kfdot_fp16},
-    {"fmadd.fp16", Instruction::kfmadd_fp16},
-
+    {"fsd", Instruction::kfsd}
 
 };
 
 
 static const std::unordered_set<std::string> valid_instructions = {
-    "add", "sub", "and", "or", "xor","add_simd32", "sll", "srl", "sra", "slt", "sltu", //newly added instruction
+    "add", "sub", "and", "or", "xor",
+    "add_simd32","sub_simd32","mul_simd32","load_simd32","div_simd32",
+    "add_simd16","sub_simd16","mul_simd16","load_simd16","div_simd16","rem_simd16",
+    "add_simd8","sub_simd8","mul_simd8","load_simd8","div_simd8","rem_simd8",
+    "add_simd4","sub_simd4","mul_simd4","load_simd4","div_simd4","rem_simd4",
+    "add_simd2","sub_simd2","mul_simd2","load_simd2","div_simd2","rem_simd2",
+    "add_simdb","sub_simdb","mul_simdb","load_simdb","div_simdb","rem_simdb",
+    "sll", "srl", "sra", "slt", "sltu", //newly added instruction
     "addw", "subw", "sllw", "srlw", "sraw",
     "addi", "xori", "ori", "andi", "slli", "srli", "srai", "slti", "sltiu",
     "addiw", "slliw", "srliw", "sraiw",
@@ -270,29 +267,20 @@ static const std::unordered_set<std::string> valid_instructions = {
     "fcvt.s.d", "fcvt.d.s",
     "feq.d", "flt.d", "fle.d",
     "fclass.d", "fcvt.w.d", "fcvt.wu.d", "fcvt.d.w", "fcvt.d.wu",
-    "fcvt.l.d", "fcvt.lu.d", "fmv.x.d", "fcvt.d.l", "fcvt.d.lu", "fmv.d.x",
-
-    // SIMD 4
-    "add_simd4","sub_simd4","mul_simd4","div_simd4","rem_simd4","and_simd4","or_simd4","nor_simd4",
-
-    // SIMD 2
-    "add_simd2","sub_simd2","mul_simd2","div_simd2","rem_simd2","and_simd2","or_simd2","xor_simd2",
-
-    // SIMD 1 Binary
-
-    "add_binary","sub_binary","mul_binary","div_binary","rem_binary","and_binary","or_binary","xor_binary",
-
-    // BFloat16 Instructions
-    "fadd.bf16", "fsub.bf16", "fmul.bf16", "fmax.bf16", "fmadd.bf16",
-
-    //Float16 instructions
-    "fadd.fp16", "fsub.fp16", "fmul.fp16", "fmax.fp16", "fdot.fp16", "fmadd.fp16",
+    "fcvt.l.d", "fcvt.lu.d", "fmv.x.d", "fcvt.d.l", "fcvt.d.lu", "fmv.d.x"
 
 };
 
 static const std::unordered_set<std::string> RTypeInstructions = {
     // Base RV32I
-    "add", "sub", "and", "or", "xor","add_simd32", "sll", "srl", "sra", "slt", "sltu", //newly added 
+    "add", "sub", "and", "or", "xor",
+    "add_simd32","sub_simd32","mul_simd32","load_simd32","div_simd32","rem_simd32",
+    "add_simd16","sub_simd16","mul_simd16","load_simd16","div_simd16","rem_simd16",
+    "add_simd8","sub_simd8","mul_simd8","load_simd8","div_simd8","rem_simd8",
+    "add_simd4","sub_simd4","mul_simd4","load_simd4","div_simd4","rem_simd4",
+    "add_simd2","sub_simd2","mul_simd2","load_simd2","div_simd2","rem_simd2",
+    "add_simdb","sub_simdb","mul_simdb","load_simdb","div_simdb","rem_simdb",
+    "sll", "srl", "sra", "slt", "sltu", //newly added 
 
     // RV64
     "addw", "subw", "sllw", "srlw", "sraw",
@@ -302,18 +290,6 @@ static const std::unordered_set<std::string> RTypeInstructions = {
 
     // M Extension RV64
     "mulw", "divw", "divuw", "remw", "remuw",
-
-    // SIMD 4
-
-        // SIMD 4
-    "add_simd4","sub_simd4","mul_simd4","div_simd4","rem_simd4","and_simd4","or_simd4","nor_simd4",
-
-    // SIMD 2
-    "add_simd2","sub_simd2","mul_simd2","div_simd2","rem_simd2","and_simd2","or_simd2","xor_simd2",
-
-    // SIMD 1 Binary
-
-    "add_binary","sub_binary","mul_binary","div_binary","rem_binary","and_binary","or_binary","xor_binary",
 
 };
 
@@ -405,8 +381,6 @@ static const std::unordered_set<std::string> FDExtensionRTypeInstructions = {
 static const std::unordered_set<std::string> FDExtensionR1TypeInstructions = {
     "fadd.s", "fsub.s", "fmul.s", "fdiv.s",
     "fadd.d", "fsub.d", "fmul.d", "fdiv.d",
-    "fadd.bf16", "fsub.bf16", "fmul.bf16", "fmax.bf16",
-    "fadd.fp16", "fsub.fp16", "fmul.fp16", "fmax.fp16", "fdot.fp16",
 };
 
 static const std::unordered_set<std::string> FDExtensionR2TypeInstructions = {
@@ -434,8 +408,6 @@ static const std::unordered_set<std::string> FDExtensionR3TypeInstructions = {
 static const std::unordered_set<std::string> FDExtensionR4TypeInstructions = {
     "fmadd.s", "fmsub.s", "fnmsub.s", "fnmadd.s",
     "fmadd.d", "fmsub.d", "fnmsub.d", "fnmadd.d",
-    "fmadd.bf16",
-    "fmadd.fp16"
 };
 
 static const std::unordered_set<std::string> FDExtensionITypeInstructions = {
@@ -463,7 +435,53 @@ std::unordered_map<std::string, RTypeInstructionEncoding> R_type_instruction_enc
     {"add", {0b0110011, 0b000, 0b0000000}}, // O_GPR_C_GPR_C_GPR
     {"sub", {0b0110011, 0b000, 0b0100000}}, // O_GPR_C_GPR_C_GPR
     {"xor", {0b0110011, 0b100, 0b0000000}}, // O_GPR_C_GPR_C_GPR
+
     {"add_simd32",{0b0110011, 0b000, 0b0001111}},// O_GPR_C_GPR_C_GPR
+    {"sub_simd32",{0b0110011, 0b001, 0b0001111}},// O_GPR_C_GPR_C_GPR
+    {"mul_simd32",{0b0110011, 0b010, 0b0001111}},// O_GPR_C_GPR_C_GPR
+    {"load_simd32",{0b0110011, 0b011, 0b0001111}},// O_GPR_C_GPR_C_GPR
+    {"div_simd32",{0b0110011, 0b101, 0b0001111}},// O_GPR_C_GPR_C_GPR
+    {"rem_simd32",{0b0110011, 0b110, 0b0001111}},// O_GPR_C_GPR_C_GPR
+
+    {"add_simd16",{0b0110011, 0b000, 0b0011111}},// O_GPR_C_GPR_C_GPR
+    {"sub_simd16",{0b0110011, 0b001, 0b0011111}},// O_GPR_C_GPR_C_GPR
+    {"mul_simd16",{0b0110011, 0b010, 0b0011111}},// O_GPR_C_GPR_C_GPR
+    {"load_simd16",{0b0110011, 0b011, 0b0011111}},// O_GPR_C_GPR_C_GPR
+    {"div_simd16",{0b0110011, 0b101, 0b0011111}},// O_GPR_C_GPR_C_GPR
+    {"rem_simd16",{0b0110011, 0b110, 0b0011111}},// O_GPR_C_GPR_C_GPR
+
+    {"add_simd8",{0b0110011, 0b000, 0b0111111}},// O_GPR_C_GPR_C_GPR
+    {"sub_simd8",{0b0110011, 0b001, 0b0111111}},// O_GPR_C_GPR_C_GPR
+    {"mul_simd8",{0b0110011, 0b010, 0b0111111}},// O_GPR_C_GPR_C_GPR
+    {"load_simd8",{0b0110011, 0b011, 0b0111111}},// O_GPR_C_GPR_C_GPR
+    {"div_simd8",{0b0110011, 0b101, 0b0111111}},// O_GPR_C_GPR_C_GPR
+    {"rem_simd8",{0b0110011, 0b110, 0b0111111}},// O_GPR_C_GPR_C_GPR
+
+
+    {"add_simd4",{0b0110011, 0b000, 0b1111111}},// O_GPR_C_GPR_C_GPR
+    {"sub_simd4",{0b0110011, 0b001, 0b1111111}},// O_GPR_C_GPR_C_GPR
+    {"mul_simd4",{0b0110011, 0b010, 0b1111111}},// O_GPR_C_GPR_C_GPR
+    {"load_simd4",{0b0110011, 0b011, 0b1111111}},// O_GPR_C_GPR_C_GPR
+    {"div_simd4",{0b0110011, 0b101, 0b1111111}},// O_GPR_C_GPR_C_GPR
+    {"rem_simd4",{0b0110011, 0b110, 0b1111111}},// O_GPR_C_GPR_C_GPR
+
+
+    {"add_simd2",{0b0110011, 0b000, 0b0111110}},// O_GPR_C_GPR_C_GPR
+    {"sub_simd2",{0b0110011, 0b001, 0b0111110}},// O_GPR_C_GPR_C_GPR
+    {"mul_simd2",{0b0110011, 0b010, 0b0111110}},// O_GPR_C_GPR_C_GPR
+    {"load_simd2",{0b0110011, 0b011, 0b0111110}},// O_GPR_C_GPR_C_GPR
+    {"div_simd2",{0b0110011, 0b101, 0b0111110}},// O_GPR_C_GPR_C_GPR
+    {"rem_simd2",{0b0110011, 0b110, 0b0111110}},// O_GPR_C_GPR_C_GPR
+
+
+    {"add_simdb",{0b0110011, 0b000, 0b0111100}},// O_GPR_C_GPR_C_GPR
+    {"sub_simdb",{0b0110011, 0b001, 0b0111100}},// O_GPR_C_GPR_C_GPR
+    {"mul_simdb",{0b0110011, 0b010, 0b0111100}},// O_GPR_C_GPR_C_GPR
+    {"load_simdb",{0b0110011, 0b011, 0b0111100}},// O_GPR_C_GPR_C_GPR
+    {"div_simdb",{0b0110011, 0b101, 0b0111100}},// O_GPR_C_GPR_C_GPR
+    {"rem_simdb",{0b0110011, 0b110, 0b0111100}},// O_GPR_C_GPR_C_GPR
+
+
     {"or", {0b0110011, 0b110, 0b0000000}}, // O_GPR_C_GPR_C_GPR
     {"and", {0b0110011, 0b111, 0b0000000}}, // O_GPR_C_GPR_C_GPR
     {"sll", {0b0110011, 0b001, 0b0000000}}, // O_GPR_C_GPR_C_GPR
@@ -493,39 +511,6 @@ std::unordered_map<std::string, RTypeInstructionEncoding> R_type_instruction_enc
     {"divuw", {0b0111011, 0b101, 0b0000001}}, // O_GPR_C_GPR_C_GPR
     {"remw", {0b0111011, 0b110, 0b0000001}}, // O_GPR_C_GPR_C_GPR
     {"remuw", {0b0111011, 0b111, 0b0000001}}, // O_GPR_C_GPR_C_GPR
-
-    // SIMD 4
-
-    {"add_simd4",{0b0110011, 0b000, 0b1111111}},
-    {"sub_simd4",{0b0110011, 0b001, 0b1111111}},
-    {"mul_simd4",{0b0110011, 0b010, 0b1111111}},
-    {"div_simd4",{0b0110011, 0b011, 0b1111111}},
-    {"rem_simd4",{0b0110011, 0b100, 0b1111111}},
-    {"and_simd4",{0b0110011, 0b101, 0b1111111}},
-    {"or_simd4",{0b0110011, 0b110, 0b1111111}},
-    {"xor_simd4",{0b0110011, 0b111, 0b1111111}},
-
-        // SIMD 2
-
-    {"add_simd2",{0b0110011, 0b000, 0b0011111}},
-    {"sub_simd2",{0b0110011, 0b001, 0b0011111}},
-    {"mul_simd2",{0b0110011, 0b010, 0b0011111}},
-    {"div_simd2",{0b0110011, 0b011, 0b0011111}},
-    {"rem_simd2",{0b0110011, 0b100, 0b0011111}},
-    {"and_simd2",{0b0110011, 0b101, 0b0011111}},
-    {"or_simd2",{0b0110011, 0b110, 0b0011111}},
-    {"xor_simd2",{0b0110011, 0b111, 0b0011111}},
-
-        // SIMD 1 Binary
-
-    {"add_binary",{0b0110011, 0b000, 0b0111111}},
-    {"sub_binary",{0b0110011, 0b001, 0b0111111}},
-    {"mul_binary",{0b0110011, 0b010, 0b0111111}},
-    {"div_binary",{0b0110011, 0b011, 0b0111111}},
-    {"rem_binary",{0b0110011, 0b100, 0b0111111}},
-    {"and_binary",{0b0110011, 0b101, 0b0111111}},
-    {"or_binary",{0b0110011, 0b110, 0b0111111}},
-    {"xor_binary",{0b0110011, 0b111, 0b0111111}},
 
 };
 
@@ -635,19 +620,6 @@ std::unordered_map<std::string, FDR1TypeInstructionEncoding> F_D_R1_type_instruc
     {"fsub.d", {0b1010011, 0b0000101}}, // O_FPR_C_FPR_C_FPR
     {"fmul.d", {0b1010011, 0b0001001}}, // O_FPR_C_FPR_C_FPR
     {"fdiv.d", {0b1010011, 0b0001101}}, // O_FPR_C_FPR_C_FPR
-
-    // BFloat16 Instructions
-    {"fadd.bf16", {0b1010011, 0b0011000}}, // O_FPR_C_FPR_C_FPR
-    {"fsub.bf16", {0b1010011, 0b0011001}}, // O_FPR_C_FPR_C_FPR
-    {"fmul.bf16", {0b1010011, 0b0011010}}, // O_FPR_C_FPR_C_FPR
-    {"fmax.bf16", {0b1010011, 0b0011011}}, // O_FPR_C_FPR_C_FPR
-
-    // Float16 (fp16) SIMD Instructions
-    {"fadd.fp16", {0b1010011, 0b0011100}}, // O_FPR_C_FPR_C_FPR
-    {"fsub.fp16", {0b1010011, 0b0011101}}, // O_FPR_C_FPR_C_FPR
-    {"fmul.fp16", {0b1010011, 0b0011110}}, // O_FPR_C_FPR_C_FPR
-    {"fmax.fp16", {0b1010011, 0b0011111}}, // O_FPR_C_FPR_C_FPR
-    {"fdot.fp16", {0b1010011, 0b0100000}}, // O_FPR_C_FPR_C_FPR
 };
 
 std::unordered_map<std::string, FDR2TypeInstructionEncoding> F_D_R2_type_instruction_encoding_map = {
@@ -702,11 +674,6 @@ std::unordered_map<std::string, FDR4TypeInstructionEncoding> F_D_R4_type_instruc
     {"fmsub.d", {0b1000111, 0b01}}, // O_FPR_C_FPR_C_FPR_C_FPR
     {"fnmsub.d", {0b1001011, 0b01}}, // O_FPR_C_FPR_C_FPR_C_FPR
     {"fnmadd.d", {0b1001111, 0b01}}, // O_FPR_C_FPR_C_FPR_C_FPR
-
-    // BFloat16 Instruction
-    {"fmadd.bf16", {0b1000011, 0b10}} // O_FPR_C_FPR_C_FPR_C_FPR
-
-    {"fmadd.fp16", {0b1000011, 0b11}} // O_FPR_C_FPR_C_FPR_C_FPR
 };
 
 std::unordered_map<std::string, FDITypeInstructionEncoding> F_D_I_type_instruction_encoding_map = {
@@ -756,6 +723,47 @@ std::unordered_map<std::string, std::vector<SyntaxType>> instruction_syntax_map 
     {"sub", {SyntaxType::O_GPR_C_GPR_C_GPR}},
     {"xor", {SyntaxType::O_GPR_C_GPR_C_GPR}},
     {"add_simd32", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"sub_simd32", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"mul_simd32", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"load_simd32", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"div_simd32", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"rem_simd32", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+
+    {"add_simd16", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"sub_simd16", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"mul_simd16", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"load_simd16", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"div_simd16", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"rem_simd16", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+
+    {"add_simd8", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"sub_simd8", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"mul_simd8", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"load_simd8", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"div_simd8", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"rem_simd8", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    
+    {"add_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"sub_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"mul_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"load_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"div_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"rem_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    
+    {"add_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"sub_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"mul_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"load_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"div_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"rem_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+
+    {"add_simdb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"sub_simdb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"mul_simdb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"load_simdb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"div_simdb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"rem_simdb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+
     {"or", {SyntaxType::O_GPR_C_GPR_C_GPR}},
     {"and", {SyntaxType::O_GPR_C_GPR_C_GPR}},
     {"sll", {SyntaxType::O_GPR_C_GPR_C_GPR}},
@@ -951,49 +959,6 @@ std::unordered_map<std::string, std::vector<SyntaxType>> instruction_syntax_map 
     {"fmv.x.d", {SyntaxType::O_GPR_C_FPR}}, // x[n][0:63] to f[m][0:63], 64-bit floating-point value from an f (floating-point) register into an x (integer) register without conversion
     {"fmv.d.x", {SyntaxType::O_FPR_C_GPR}}, // f[n][0:63] to x[m][0:63], 64-bit floating-point value from an x (integer) register into an f (floating-point) register without conversion
 
-
-    // SIMD 4
-
-    {"add_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"sub_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"mul_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"div_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"rem_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"and_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"or_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"xor_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-
-
-        // SIMD 2
-
-    {"add_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"sub_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"mul_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"div_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"rem_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"and_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"or_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"xor_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-
-
-    // SIMD 1 Binary
-
-    {"add_binary", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"sub_binary", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"mul_binary", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"div_binary", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"rem_binary", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"and_binary", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"or_binary", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-    {"xor_binary", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-
-
-    // BFloat16 Syntax
-    {"fadd.bf16", {SyntaxType::O_FPR_C_FPR_C_FPR}},
-    {"fsub.bf16", {SyntaxType::O_FPR_C_FPR_C_FPR}},
-    {"fmul.bf16", {SyntaxType::O_FPR_C_FPR_C_FPR}},
-    {"fmax.bf16", {SyntaxType::O_FPR_C_FPR_C_FPR}},
-    {"fmadd.bf16", {SyntaxType::O_FPR_C_FPR_C_FPR_C_FPR}},
 };
 
 bool isValidInstruction(const std::string &instruction) {

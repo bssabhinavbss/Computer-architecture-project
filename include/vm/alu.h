@@ -48,7 +48,52 @@ enum class AluOp {
     kAnd, ///< Bitwise kAnd operation.
     kOr, ///< Bitwise kOr operation.
     kXor, ///< Bitwise kXor operation.
+
     kAdd_simd32, ///<Newly added instruction>///
+    kSub_simd32,
+    kMul_simd32,
+    kLoad_simd32,
+    kDiv_simd32,
+    kRem_simd32,
+
+    kAdd_simd16, ///<Newly added instruction>///
+    kSub_simd16,
+    kMul_simd16,
+    kLoad_simd16,
+    kDiv_simd16,
+    kRem_simd16,
+
+    kAdd_simd8, ///<Newly added instruction>///
+    kSub_simd8,
+    kMul_simd8,
+    kLoad_simd8,
+    kDiv_simd8,
+    kRem_simd8,
+    
+
+    kAdd_simd4, ///<Newly added instruction>///
+    kSub_simd4,
+    kMul_simd4,
+    kLoad_simd4,
+    kDiv_simd4,
+    kRem_simd4,
+
+
+    kAdd_simd2, ///<Newly added instruction>///
+    kSub_simd2,
+    kMul_simd2,
+    kLoad_simd2,
+    kDiv_simd2,
+    kRem_simd2,
+
+
+    kAdd_simdb, ///<Newly added instruction>///
+    kSub_simdb,
+    kMul_simdb,
+    kLoad_simdb,
+    kDiv_simdb,
+    kRem_simdb,
+
     kSll, ///< Shift left logical operation.
     kSllw, ///< Shift left logical word operation.
     kSrl, ///< Shift right logical operation.
@@ -127,49 +172,6 @@ enum class AluOp {
 
     FMV_D_X, ///< Floating point move to integer double operation.
     FMV_X_D, ///< Floating point move from integer double operation.
-
-    // SIMD 4
-
-    kAdd_simd4,
-    kSub_simd4,
-    kMul_simd4,
-    kDiv_simd4,
-    kRem_simd4,
-    kAnd_simd4,
-    kOr_simd4,
-    kXor_simd4,
-
-
-    // SIMD 2
-
-    kAdd_simd2,
-    kSub_simd2,
-    kMul_simd2,
-    kDiv_simd2,
-    kRem_simd2,
-    kAnd_simd2,
-    kOr_simd2,
-    kXor_simd2,
-
-    // SIMD 1 Binary
-
-    kAdd_binary,
-    kSub_binary,
-    kMul_binary,
-    kDiv_binary,
-    kRem_binary,
-    kAnd_binary,
-    kOr_binary,
-    kXor_binary,
-
-    // BFloat16 Operations
-    FADD_BF16,
-    FSUB_BF16,
-    FMUL_BF16,
-    FMAX_BF16,
-    FMADD_BF16,
-
-
 };
 
 inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
@@ -185,7 +187,50 @@ inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
         case AluOp::kAnd: os << "kAnd"; break;
         case AluOp::kOr: os << "kOr"; break;
         case AluOp::kXor: os << "kXor"; break;
+
         case AluOp::kAdd_simd32: os << "kAdd_simd32";break;
+        case AluOp::kSub_simd32: os << "kSub_simd32";break;
+        case AluOp::kMul_simd32: os << "kMul_simd32";break;
+        case AluOp::kLoad_simd32: os << "kLoad_simd32";break;
+        case AluOp::kDiv_simd32: os << "kDiv_simd32";break;
+        case AluOp::kRem_simd32: os << "kRem_simd32";break;
+
+        case AluOp::kAdd_simd16: os << "kAdd_simd16";break;
+        case AluOp::kSub_simd16: os << "kSub_simd16";break;
+        case AluOp::kMul_simd16: os << "kMul_simd16";break;
+        case AluOp::kLoad_simd16: os << "kLoad_simd16";break;
+        case AluOp::kDiv_simd16: os << "kDiv_simd16";break;
+        case AluOp::kRem_simd16: os << "kRem_simd16";break;
+        
+        case AluOp::kAdd_simd8: os << "kAdd_simd8";break;
+        case AluOp::kSub_simd8: os << "kSub_simd8";break;
+        case AluOp::kMul_simd8: os << "kMul_simd8";break;
+        case AluOp::kLoad_simd8: os << "kLoad_simd8";break;
+        case AluOp::kDiv_simd8: os << "kDiv_simd8";break;
+        case AluOp::kRem_simd8: os << "kRem_simd8";break;
+        
+        case AluOp::kAdd_simd4: os << "kAdd_simd4";break;
+        case AluOp::kSub_simd4: os << "kSub_simd4";break;
+        case AluOp::kMul_simd4: os << "kMul_simd4";break;
+        case AluOp::kLoad_simd4: os << "kLoad_simd4";break;
+        case AluOp::kDiv_simd4: os << "kDiv_simd4";break;
+        case AluOp::kRem_simd4: os << "kRem_simd4";break;
+
+        case AluOp::kAdd_simd2: os << "kAdd_simd2";break;
+        case AluOp::kSub_simd2: os << "kSub_simd2";break;
+        case AluOp::kMul_simd2: os << "kMul_simd2";break;
+        case AluOp::kLoad_simd2: os << "kLoad_simd2";break;
+        case AluOp::kDiv_simd2: os << "kDiv_simd2";break;
+        case AluOp::kRem_simd2: os << "kRem_simd2";break;
+
+        case AluOp::kAdd_simdb: os << "kAdd_simdb";break;
+        case AluOp::kSub_simdb: os << "kSub_simdb";break;
+        case AluOp::kMul_simdb: os << "kMul_simdb";break;
+        case AluOp::kLoad_simdb: os << "kLoad_simdb";break;
+        case AluOp::kDiv_simdb: os << "kDiv_simdb";break;
+        case AluOp::kRem_simdb: os << "kRem_simdb";break;
+
+
         case AluOp::kSll: os << "kSll"; break;
         case AluOp::kSrl: os << "kSrl"; break;
         case AluOp::kSra: os << "kSra"; break;
@@ -240,49 +285,6 @@ inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
         case AluOp::FDIV_D: os << "FDIV_D"; break;
         case AluOp::FSQRT_D: os << "FSQRT_D"; break;
         case AluOp::FSGNJ_D: os << "FSGNJ_D"; break;
-
-        // SIMD 4
-
-        case AluOp::kAdd_simd4: os << "kAdd_simd4";break;
-        case AluOp::kSub_simd4: os << "kSub_simd4";break;
-        case AluOp::kMul_simd4: os << "kMul_simd4";break;
-        case AluOp::kDiv_simd4: os << "kDiv_simd4";break;
-        case AluOp::kRem_simd4: os << "kRem_simd4";break;
-        case AluOp::kAnd_simd4: os << "kAnd_simd4";break;
-        case AluOp::kOr_simd4: os << "kOr_simd4";break;
-        case AluOp::kXor_simd4: os << "kXor_simd4";break;
-
-        // SIMD 2
-
-        
-        case AluOp::kAdd_simd2: os << "kAdd_simd2";break;
-        case AluOp::kSub_simd2: os << "kSub_simd2";break;
-        case AluOp::kMul_simd2: os << "kMul_simd2";break;
-        case AluOp::kDiv_simd2: os << "kDiv_simd2";break;
-        case AluOp::kRem_simd2: os << "kRem_simd2";break;
-        case AluOp::kAnd_simd2: os << "kAnd_simd2";break;
-        case AluOp::kOr_simd2: os << "kOr_simd2";break;
-        case AluOp::kXor_simd2: os << "kXor_simd2";break;
-
-        // SIMD 1 Binary
-
-        
-        case AluOp::kAdd_binary: os << "kAdd_binary";break;
-        case AluOp::kSub_binary: os << "kSub_binary";break;
-        case AluOp::kMul_binary: os << "kMul_binary";break;
-        case AluOp::kDiv_binary: os << "kDiv_binary";break;
-        case AluOp::kRem_binary: os << "kRem_binary";break;
-        case AluOp::kAnd_binary: os << "kAnd_binary";break;
-        case AluOp::kOr_binary: os << "kOr_binary";break;
-        case AluOp::kXor_binary: os << "kXor_binary";break;
-
-
-        // BFloat16 Operations
-case AluOp::FADD_BF16: os << "FADD_BF16"; break;
- case AluOp::FSUB_BF16: os << "FSUB_BF16"; break;
- case AluOp::FMUL_BF16: os << "FMUL_BF16"; break;
- case AluOp::FMAX_BF16: os << "FMAX_BF16"; break;
-  case AluOp::FMADD_BF16: os << "FMADD_BF16"; break;
 
 
         default: os << "UNKNOWN"; break;
