@@ -52,6 +52,91 @@ float bfloat16_to_float(uint16_t b) {
     return un.f;
 }
 
+float float16_to_float(uint16_t h) {
+    union { float f; uint32_t u; } v;
+    v.u = (h & 0x8000) << 16; // Sign bit
+    uint32_t exp = (h >> 10) & 0x1F;
+    uint32_t mant = h & 0x03FF;
+
+    if (exp == 0) { // Subnormal or Zero
+        if (mant == 0) { // Zero
+            // v.u already has the sign
+        } else { // Subnormal
+            // Convert subnormal to normal float
+            exp = 127 - 15 + 1;
+            while ((mant & 0x0400) == 0) {
+                mant <<= 1;
+                exp--;
+            }
+            mant &= 0x03FF;
+            v.u |= (exp << 23) | (mant << 13);
+        }
+    } else if (exp == 0x1F) { // Infinity or NaN
+        v.u |= 0x7F800000; // Exponent
+        if (mant != 0) { // NaN
+            v.u |= 0x00400000 | (mant << 13); // Set quiet bit and mantissa
+        }
+    } else { // Normal number
+        v.u |= ((exp - 15 + 127) << 23) | (mant << 13);
+    }
+
+    return v.f;
+}
+
+
+uint16_t float_to_float16(float f) {
+    union { float f; uint32_t u; } v;
+    v.f = f;
+    uint32_t sign = (v.u >> 16) & 0x8000;
+    int32_t exp = (v.u >> 23) & 0xFF;
+    uint32_t mant = v.u & 0x007FFFFF;
+
+    if (std::isnan(f)) {
+        return sign | 0x7C01 | (mant >> 13); // qNaN
+    }
+    if (std::isinf(f)) {
+        return sign | 0x7C00;
+    }
+
+    int32_t new_exp = exp - 127 + 15; // Adjust bias
+
+    if (new_exp >= 31) { // Overflow to infinity
+        return sign | 0x7C00;
+    }
+
+    if (new_exp <= 0) { // Underflow to subnormal or zero
+        if (new_exp < -10) { // Underflow to zero
+            return sign;
+        }
+        // Subnormal
+        mant = (mant | 0x800000) >> (1 - new_exp);
+        // Rounding logic for subnormals
+        if ((mant & 0x1000) || ((mant & 0x3000) == 0x3000)) {
+           mant += 0x2000;
+        }
+        return sign | (mant >> 13);
+    }
+
+    // Normal number, apply rounding
+    uint32_t round_bits = mant & 0x1FFF;
+    mant >>= 13; // Shift down
+    
+    // Round to nearest even
+    if (round_bits > 0x1000 || (round_bits == 0x1000 && (mant & 1))) {
+        mant++;
+    }
+
+    if (mant >= 0x400) { // Mantissa overflowed
+        mant = 0;
+        new_exp++;
+        if (new_exp >= 31) { // Overflow to infinity
+            return sign | 0x7C00;
+        }
+    }
+
+    return sign | (new_exp << 10) | mant;
+}
+
 
 static std::string decode_fclass(uint16_t res) {
   static const std::vector<std::string> labels = {
@@ -1766,6 +1851,79 @@ static std::string decode_fclass(uint16_t res) {
         uint64_t result_64 = 0;
         for (int i = 0; i < 4; ++i) {
             result_64 |= (uint64_t)float_to_bfloat16(results_fp32[i]) << (i * 16);
+        }
+        std::fesetround(original_rm);
+        return {result_64, fcsr};
+    }
+
+    case AluOp::FADD_FP16: {
+        uint64_t result_64 = 0;
+        for (int i = 0; i < 4; ++i) {
+            float f1 = float16_to_float((uint16_t)(ina >> (i * 16)));
+            float f2 = float16_to_float((uint16_t)(inb >> (i * 16)));
+            float res_f = f1 + f2;
+            result_64 |= (uint64_t)float_to_float16(res_f) << (i * 16);
+        }
+        std::fesetround(original_rm); // Restore rounding mode
+        return {result_64, fcsr};
+    }
+    case AluOp::FSUB_FP16: {
+        uint64_t result_64 = 0;
+        for (int i = 0; i < 4; ++i) {
+            float f1 = float16_to_float((uint16_t)(ina >> (i * 16)));
+            float f2 = float16_to_float((uint16_t)(inb >> (i * 16)));
+            float res_f = f1 - f2;
+            result_64 |= (uint64_t)float_to_float16(res_f) << (i * 16);
+        }
+        std::fesetround(original_rm);
+        return {result_64, fcsr};
+    }
+    case AluOp::FMUL_FP16: {
+        uint64_t result_64 = 0;
+        for (int i = 0; i < 4; ++i) {
+            float f1 = float16_to_float((uint16_t)(ina >> (i * 16)));
+            float f2 = float16_to_float((uint16_t)(inb >> (i * 16)));
+            float res_f = f1 * f2;
+            result_64 |= (uint64_t)float_to_float16(res_f) << (i * 16);
+        }
+        std::fesetround(original_rm);
+        return {result_64, fcsr};
+    }
+    case AluOp::FMAX_FP16: {
+        uint64_t result_64 = 0;
+        for (int i = 0; i < 4; ++i) {
+            float f1 = float16_to_float((uint16_t)(ina >> (i * 16)));
+            float f2 = float16_to_float((uint16_t)(inb >> (i * 16)));
+            float res_f = std::fmax(f1, f2); // Use fmax for correct NaN handling
+            result_64 |= (uint64_t)float_to_float16(res_f) << (i * 16);
+        }
+        std::fesetround(original_rm);
+        return {result_64, fcsr};
+    }
+    case AluOp::FDOT_FP16: {
+        float dot_product = 0.0f;
+        // Perform dot product in float32
+        for (int i = 0; i < 4; ++i) {
+            float f1 = float16_to_float((uint16_t)(ina >> (i * 16)));
+            float f2 = float16_to_float((uint16_t)(inb >> (i * 16)));
+            dot_product = std::fma(f1, f2, dot_product);
+        }
+        // Convert the single result back to fp16
+        uint16_t res_h = float_to_float16(dot_product);
+        // Replicate the result across all 4 lanes
+        uint64_t result_64 = (uint64_t)res_h | ((uint64_t)res_h << 16) |
+                             ((uint64_t)res_h << 32) | ((uint64_t)res_h << 48);
+        std::fesetround(original_rm);
+        return {result_64, fcsr};
+    }
+    case AluOp::FMADD_FP16: {
+        uint64_t result_64 = 0;
+        for (int i = 0; i < 4; ++i) {
+            float f1 = float16_to_float((uint16_t)(ina >> (i * 16)));
+            float f2 = float16_to_float((uint16_t)(inb >> (i * 16)));
+            float f3 = float16_to_float((uint16_t)(inc >> (i * 16)));
+            float res_f = std::fma(f1, f2, f3);
+            result_64 |= (uint64_t)float_to_float16(res_f) << (i * 16);
         }
         std::fesetround(original_rm);
         return {result_64, fcsr};

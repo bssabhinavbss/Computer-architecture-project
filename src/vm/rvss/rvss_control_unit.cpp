@@ -632,12 +632,6 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
     }
     
     // F extension + D extension
-    // TODO: correct this
-
-    // case 0b1000011: {
-    //     return alu::AluOp::kFmadd_s;
-    // }
-
     case 0b1010011: {
         switch (funct7) {
             case 0b0000000: {// FADD_S
@@ -844,55 +838,9 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 }
                 break;
             }
-    //         case 0b1000011: { // FMADD.S, FMADD.D
-    //             switch (funct2) {
-    //                 case 0b00: {// FMADD.S
-    //                     return alu::AluOp::kFmadd_s;
-    //                 }
-    //                 case 0b01: {// FMADD.D
-    //                     return alu::AluOp::FMADD_D;
-    //                 }
-    //             }
-    //             break;
-    //         }
-    //         case 0b1000111: { // FMSUB.S, FMSUB.D
-    //             switch (funct2) {
-    //                 case 0b00: {// FMSUB.S
-    //                     return alu::AluOp::kFmsub_s;
-    //                 }
-    //                 case 0b01: {// FMSUB.D
-    //                     return alu::AluOp::FMSUB_D;
-    //                 }
-    //             }
-    //             break;
-    //         }
-    //         case 0b1001011: { // FNMADD.S, FNMADD.D
-    //             switch (funct2) {
-    //                 case 0b00: {// FNMADD.S
-    //                     return alu::AluOp::kFnmadd_s;
-    //                 }
-    //                 case 0b01: {// FNMADD.D
-    //                     return alu::AluOp::FNMADD_D;
-    //                 }
-    //             }
-    //             break;
-    //         }
-    //         case 0b1001111: { // FNMSUB.S, FNMSUB.D
-    //             switch (funct2) {
-    //                 case 0b00: {// FNMSUB.S
-    //                     return alu::AluOp::kFnmsub_s;
-    //                 }
-    //                 case 0b01: {// FNMSUB.D
-    //                     return alu::AluOp::FNMSUB_D;
-    //                 }
-    //             }
-    //             break;
-    //         }
-    //     }
-    //     break;
-    // }
 
-    case 0b0011000: { // fadd.bf16
+            // --- BFloat16 R-Type (FIXED: MOVED INSIDE 0b1010011) ---
+            case 0b0011000: { // fadd.bf16
                 return alu::AluOp::FADD_BF16;
             }
             case 0b0011001: { // fsub.bf16
@@ -904,45 +852,63 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
             case 0b0011011: { // fmax.bf16
                 return alu::AluOp::FMAX_BF16;
             }
-            case 0b1000011: { // FMADD
-            switch (funct2) { // Check fmt
-                case 0b00: return alu::AluOp::kFmadd_s;  // FMADD.S
-                case 0b01: return alu::AluOp::FMADD_D;   // FMADD.D
-                case 0b10: return alu::AluOp::FMADD_BF16; // FMADD.BF16
-                default: return alu::AluOp::kNone;
+            
+          
+// --- NEW FLOAT16 R-Type ---
+            case 0b0101000: { // kfadd_fp16
+                return alu::AluOp::FADD_FP16;
             }
-            // No break needed after return
-        }
-        case 0b1000111: { // FMSUB
-            switch (funct2) { // Check fmt
-                case 0b00: return alu::AluOp::kFmsub_s;  // FMSUB.S
-                case 0b01: return alu::AluOp::FMSUB_D;   // FMSUB.D
-                // Add case 0b10: return alu::AluOp::kFmsub_bf16; if you define it later
-                default: return alu::AluOp::kNone;
+            case 0b0101001: { // kfsub_fp16
+                return alu::AluOp::FSUB_FP16;
             }
-        }
-        case 0b1001011: { // FNMSUB (Opcode from your header file)
-             switch (funct2) { // Check fmt
-                case 0b00: return alu::AluOp::kFnmsub_s; // FNMSUB.S
-                case 0b01: return alu::AluOp::FNMSUB_D;  // FNMSUB.D
-                // Add case 0b10: return alu::AluOp::kFnmsub_bf16; if you define it later
-                default: return alu::AluOp::kNone;
+            case 0b0101010: { // kfmul_fp16
+                return alu::AluOp::FMUL_FP16;
+            }
+            case 0b0101011: { // kfmax_fp16
+                return alu::AluOp::FMAX_FP16;
+            }
+            case 0b0101110: { // kfdot_fp16
+                return alu::AluOp::FDOT_FP16;
             }
         }
-         case 0b1001111: { // FNMADD (Opcode from your header file)
-             switch (funct2) { // Check fmt
-                case 0b00: return alu::AluOp::kFnmadd_s; // FNMADD.S
-                case 0b01: return alu::AluOp::FNMADD_D;  // FNMADD.D
-                // Add case 0b10: return alu::AluOp::kFnmadd_bf16; if you define it later
-                default: return alu::AluOp::kNone;
-            }
-        }
-        }
-
-
-       
         break;
     }
+    
+    case 0b1000011: { // FMADD
+        switch (funct2) { // Check fmt
+            case 0b00: return alu::AluOp::kFmadd_s;  // FMADD.S
+            case 0b01: return alu::AluOp::FMADD_D;   // FMADD.D
+            case 0b10: return alu::AluOp::FMADD_BF16; // FMADD.BF16
+            case 0b11: return alu::AluOp::FMADD_FP16; // --- NEW: FMADD.FP16 ---
+            default: return alu::AluOp::kNone;
+        }
+        // No break needed after return
+    }
+    case 0b1000111: { // FMSUB
+        switch (funct2) { // Check fmt
+            case 0b00: return alu::AluOp::kFmsub_s;  // FMSUB.S
+            case 0b01: return alu::AluOp::FMSUB_D;   // FMSUB.D
+            // Add case 0b10: return alu::AluOp::kFmsub_bf16; if you define it later
+            default: return alu::AluOp::kNone;
+        }
+    }
+    case 0b1001011: { // FNMSUB (Opcode from your header file)
+         switch (funct2) { // Check fmt
+            case 0b00: return alu::AluOp::kFnmsub_s; // FNMSUB.S
+            case 0b01: return alu::AluOp::FNMSUB_D;  // FNMSUB.D
+            // Add case 0b10: return alu::AluOp::kFnmsub_bf16; if you define it later
+            default: return alu::AluOp::kNone;
+        }
+    }
+     case 0b1001111: { // FNMADD (Opcode from your header file)
+         switch (funct2) { // Check fmt
+            case 0b00: return alu::AluOp::kFnmadd_s; // FNMADD.S
+            case 0b01: return alu::AluOp::FNMADD_D;  // FNMADD.D
+            // Add case 0b10: return alu::AluOp::kFnmadd_bf16; if you define it later
+            default: return alu::AluOp::kNone;
+        }
+    }
+
     
     case 0b0000111: {// F-Type Load
         switch (funct3) {
@@ -977,6 +943,3 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
     
     return alu::AluOp::kNone;
 }
-
-
-

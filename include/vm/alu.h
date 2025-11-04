@@ -179,6 +179,14 @@ enum class AluOp {
     FMUL_BF16,
     FMAX_BF16,
     FMADD_BF16,
+
+
+    FADD_FP16,
+  FSUB_FP16,
+  FMUL_FP16,
+  FMAX_FP16,
+  FDOT_FP16,
+  FMADD_FP16,
 };
 
 inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
@@ -299,6 +307,14 @@ case AluOp::FADD_BF16: os << "FADD_BF16"; break;
  case AluOp::FMUL_BF16: os << "FMUL_BF16"; break;
  case AluOp::FMAX_BF16: os << "FMAX_BF16"; break;
   case AluOp::FMADD_BF16: os << "FMADD_BF16"; break;
+
+
+  case AluOp::FADD_FP16: os << "FADD_FP16"; break;
+case AluOp::FSUB_FP16: os << "FSUB_FP16"; break;
+case AluOp::FMUL_FP16: os << "FMUL_FP16"; break;
+case AluOp::FMAX_FP16: os << "FMAX_FP16"; break;
+case AluOp::FDOT_FP16: os << "FDOT_FP16"; break;
+case AluOp::FMADD_FP16: os << "FMADD_FP16"; break;
 
 
         default: os << "UNKNOWN"; break;
