@@ -241,6 +241,13 @@ enum Instruction {
   krem_simdb, //newly added instruction3
   kdiv_simdb, //newly added instruction3
 
+   // BFloat16 Instructions
+ kfadd_bf16,
+ kfsub_bf16,
+ kfmul_bf16,
+ kfmax_bf16,
+ kfmadd_bf16,
+
   
 
   INVALID,
@@ -487,6 +494,16 @@ inline constexpr std::array<InstructionEncoding, static_cast<size_t>(Instruction
   InstructionEncoding(Instruction::kfmsub_d, 0b1000111, 0b01, -1, -1, -1, -1), // kfmsub_d 
   InstructionEncoding(Instruction::kfnmsub_d, 0b1001011, 0b01, -1, -1, -1, -1), // kfnmsub_d
   InstructionEncoding(Instruction::kfnmadd_d, 0b1001111, 0b01, -1, -1, -1, -1), // kfnmadd_d
+
+  // BFloat16 instructions
+  // R-Type (using opcode 0b1010011 and custom funct7)
+  InstructionEncoding(Instruction::kfadd_bf16, 0b1010011, -1, -1, -1, -1, 0b0011000), // kfadd_bf16
+  InstructionEncoding(Instruction::kfsub_bf16, 0b1010011, -1, -1, -1, -1, 0b0011001), // kfsub_bf16
+  InstructionEncoding(Instruction::kfmul_bf16, 0b1010011, -1, -1, -1, -1, 0b0011010), // kfmul_bf16
+  InstructionEncoding(Instruction::kfmax_bf16, 0b1010011, -1, -1, -1, -1, 0b0011011), // kfmax_bf16
+  
+  // R4-Type (using opcode 0b1000011 and custom funct2/fmt)
+  InstructionEncoding(Instruction::kfmadd_bf16, 0b1000011, 0b10, -1, -1, -1, -1), // kfmadd_bf16
 
 
 }};

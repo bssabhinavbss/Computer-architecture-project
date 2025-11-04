@@ -214,7 +214,14 @@ std::unordered_map<std::string, Instruction> instruction_string_map = {
     {"flw", Instruction::kflw},
     {"fsw", Instruction::kfsw},
     {"fld", Instruction::kfld},
-    {"fsd", Instruction::kfsd}
+    {"fsd", Instruction::kfsd},
+
+        // BFloat16 Instructions
+    {"fadd.bf16", Instruction::kfadd_bf16},
+    {"fsub.bf16", Instruction::kfsub_bf16},
+    {"fmul.bf16", Instruction::kfmul_bf16},
+    {"fmax.bf16", Instruction::kfmax_bf16},
+    {"fmadd.bf16", Instruction::kfmadd_bf16},
 
 };
 
@@ -267,7 +274,10 @@ static const std::unordered_set<std::string> valid_instructions = {
     "fcvt.s.d", "fcvt.d.s",
     "feq.d", "flt.d", "fle.d",
     "fclass.d", "fcvt.w.d", "fcvt.wu.d", "fcvt.d.w", "fcvt.d.wu",
-    "fcvt.l.d", "fcvt.lu.d", "fmv.x.d", "fcvt.d.l", "fcvt.d.lu", "fmv.d.x"
+    "fcvt.l.d", "fcvt.lu.d", "fmv.x.d", "fcvt.d.l", "fcvt.d.lu", "fmv.d.x",
+
+        // BFloat16 Instructions
+    "fadd.bf16", "fsub.bf16", "fmul.bf16", "fmax.bf16", "fmadd.bf16",
 
 };
 
@@ -381,6 +391,7 @@ static const std::unordered_set<std::string> FDExtensionRTypeInstructions = {
 static const std::unordered_set<std::string> FDExtensionR1TypeInstructions = {
     "fadd.s", "fsub.s", "fmul.s", "fdiv.s",
     "fadd.d", "fsub.d", "fmul.d", "fdiv.d",
+    "fadd.bf16", "fsub.bf16", "fmul.bf16", "fmax.bf16",
 };
 
 static const std::unordered_set<std::string> FDExtensionR2TypeInstructions = {
@@ -408,6 +419,7 @@ static const std::unordered_set<std::string> FDExtensionR3TypeInstructions = {
 static const std::unordered_set<std::string> FDExtensionR4TypeInstructions = {
     "fmadd.s", "fmsub.s", "fnmsub.s", "fnmadd.s",
     "fmadd.d", "fmsub.d", "fnmsub.d", "fnmadd.d",
+    "fmadd.bf16",
 };
 
 static const std::unordered_set<std::string> FDExtensionITypeInstructions = {
@@ -620,6 +632,12 @@ std::unordered_map<std::string, FDR1TypeInstructionEncoding> F_D_R1_type_instruc
     {"fsub.d", {0b1010011, 0b0000101}}, // O_FPR_C_FPR_C_FPR
     {"fmul.d", {0b1010011, 0b0001001}}, // O_FPR_C_FPR_C_FPR
     {"fdiv.d", {0b1010011, 0b0001101}}, // O_FPR_C_FPR_C_FPR
+
+        // BFloat16 Instructions
+    {"fadd.bf16", {0b1010011, 0b0011000}}, // O_FPR_C_FPR_C_FPR
+    {"fsub.bf16", {0b1010011, 0b0011001}}, // O_FPR_C_FPR_C_FPR
+    {"fmul.bf16", {0b1010011, 0b0011010}}, // O_FPR_C_FPR_C_FPR
+    {"fmax.bf16", {0b1010011, 0b0011011}}, // O_FPR_C_FPR_C_FPR
 };
 
 std::unordered_map<std::string, FDR2TypeInstructionEncoding> F_D_R2_type_instruction_encoding_map = {
@@ -674,6 +692,9 @@ std::unordered_map<std::string, FDR4TypeInstructionEncoding> F_D_R4_type_instruc
     {"fmsub.d", {0b1000111, 0b01}}, // O_FPR_C_FPR_C_FPR_C_FPR
     {"fnmsub.d", {0b1001011, 0b01}}, // O_FPR_C_FPR_C_FPR_C_FPR
     {"fnmadd.d", {0b1001111, 0b01}}, // O_FPR_C_FPR_C_FPR_C_FPR
+
+        // BFloat16 Instruction
+    {"fmadd.bf16", {0b1000011, 0b10}}, // O_FPR_C_FPR_C_FPR_C_FPR
 };
 
 std::unordered_map<std::string, FDITypeInstructionEncoding> F_D_I_type_instruction_encoding_map = {
@@ -959,6 +980,12 @@ std::unordered_map<std::string, std::vector<SyntaxType>> instruction_syntax_map 
     {"fmv.x.d", {SyntaxType::O_GPR_C_FPR}}, // x[n][0:63] to f[m][0:63], 64-bit floating-point value from an f (floating-point) register into an x (integer) register without conversion
     {"fmv.d.x", {SyntaxType::O_FPR_C_GPR}}, // f[n][0:63] to x[m][0:63], 64-bit floating-point value from an x (integer) register into an f (floating-point) register without conversion
 
+        // BFloat16 Syntax
+    {"fadd.bf16", {SyntaxType::O_FPR_C_FPR_C_FPR}},
+    {"fsub.bf16", {SyntaxType::O_FPR_C_FPR_C_FPR}},
+    {"fmul.bf16", {SyntaxType::O_FPR_C_FPR_C_FPR}},
+    {"fmax.bf16", {SyntaxType::O_FPR_C_FPR_C_FPR}},
+    {"fmadd.bf16", {SyntaxType::O_FPR_C_FPR_C_FPR_C_FPR}},
 };
 
 bool isValidInstruction(const std::string &instruction) {

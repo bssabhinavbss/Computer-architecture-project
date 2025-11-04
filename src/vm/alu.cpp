@@ -14,6 +14,45 @@
 
 namespace alu {
 
+
+ // Converts a 32-bit float to a 16-bit bfloat16 (RTNE).
+
+uint16_t float_to_bfloat16(float f) {
+    union {
+        float f;
+        uint32_t u;
+    } un;
+    un.f = f;
+
+    // Handle NaN
+    if (std::isnan(f)) {
+        return 0x7FC0; // A standard qNaN bfloat16
+    }
+
+    // Get the sign bit
+    uint32_t sign = (un.u >> 16) & 0x8000;
+
+    // Add 0x7FFF (halfway point) + adjustment for "round to nearest even"
+    un.u += 0x7FFF + ((un.u >> 16) & 1);
+
+    // Return the upper 16 bits
+    return (uint16_t)(sign | (un.u >> 16));
+}
+
+
+// Converts a 16-bit bfloat16 to a 32-bit float.
+
+float bfloat16_to_float(uint16_t b) {
+    union {
+        uint32_t u;
+        float f;
+    } un;
+    
+    un.u = (uint32_t)b << 16;
+    return un.f;
+}
+
+
 static std::string decode_fclass(uint16_t res) {
   static const std::vector<std::string> labels = {
     "-infinity",   
@@ -1614,6 +1653,122 @@ static std::string decode_fclass(uint16_t res) {
       std::memcpy(&out, &int_bits, sizeof(double));
       result = out;
       break;
+    }
+        case AluOp::FADD_BF16: {
+        // Unpack 4x BF16 from ina (fs1) and inb (fs2)
+        uint16_t fs1_vals[4];
+        uint16_t fs2_vals[4];
+        for (int i = 0; i < 4; ++i) {
+            fs1_vals[i] = (uint16_t)(ina >> (i * 16));
+            fs2_vals[i] = (uint16_t)(inb >> (i * 16));
+        }
+
+        float results_fp32[4];
+        // Convert, Compute, Convert back
+        for (int i = 0; i < 4; ++i) {
+            float f1 = bfloat16_to_float(fs1_vals[i]);
+            float f2 = bfloat16_to_float(fs2_vals[i]);
+            results_fp32[i] = f1 + f2;
+        }
+
+        // Pack results back into a uint64_t
+        uint64_t result_64 = 0;
+        for (int i = 0; i < 4; ++i) {
+            result_64 |= (uint64_t)float_to_bfloat16(results_fp32[i]) << (i * 16);
+        }
+        std::fesetround(original_rm); // Restore rounding mode
+        return {result_64, fcsr}; // Return packed result, fcsr might need adjustment later
+    } // No break needed after return
+
+    case AluOp::FSUB_BF16: {
+        uint16_t fs1_vals[4];
+        uint16_t fs2_vals[4];
+        for (int i = 0; i < 4; ++i) {
+            fs1_vals[i] = (uint16_t)(ina >> (i * 16));
+            fs2_vals[i] = (uint16_t)(inb >> (i * 16));
+        }
+        float results_fp32[4];
+        for (int i = 0; i < 4; ++i) {
+            float f1 = bfloat16_to_float(fs1_vals[i]);
+            float f2 = bfloat16_to_float(fs2_vals[i]);
+            results_fp32[i] = f1 - f2;
+        }
+        uint64_t result_64 = 0;
+        for (int i = 0; i < 4; ++i) {
+            result_64 |= (uint64_t)float_to_bfloat16(results_fp32[i]) << (i * 16);
+        }
+        std::fesetround(original_rm);
+        return {result_64, fcsr};
+    }
+
+    case AluOp::FMUL_BF16: {
+        uint16_t fs1_vals[4];
+        uint16_t fs2_vals[4];
+        for (int i = 0; i < 4; ++i) {
+            fs1_vals[i] = (uint16_t)(ina >> (i * 16));
+            fs2_vals[i] = (uint16_t)(inb >> (i * 16));
+        }
+        float results_fp32[4];
+        for (int i = 0; i < 4; ++i) {
+            float f1 = bfloat16_to_float(fs1_vals[i]);
+            float f2 = bfloat16_to_float(fs2_vals[i]);
+            results_fp32[i] = f1 * f2;
+        }
+        uint64_t result_64 = 0;
+        for (int i = 0; i < 4; ++i) {
+            result_64 |= (uint64_t)float_to_bfloat16(results_fp32[i]) << (i * 16);
+        }
+        std::fesetround(original_rm);
+        return {result_64, fcsr};
+    }
+
+    case AluOp::FMAX_BF16: {
+        uint16_t fs1_vals[4];
+        uint16_t fs2_vals[4];
+        for (int i = 0; i < 4; ++i) {
+            fs1_vals[i] = (uint16_t)(ina >> (i * 16));
+            fs2_vals[i] = (uint16_t)(inb >> (i * 16));
+        }
+        float results_fp32[4];
+        for (int i = 0; i < 4; ++i) {
+            float f1 = bfloat16_to_float(fs1_vals[i]);
+            float f2 = bfloat16_to_float(fs2_vals[i]);
+            // Handle NaNs according to standard fmax behavior if necessary
+            results_fp32[i] = (f1 > f2) ? f1 : f2; // Simplified max
+        }
+        uint64_t result_64 = 0;
+        for (int i = 0; i < 4; ++i) {
+            result_64 |= (uint64_t)float_to_bfloat16(results_fp32[i]) << (i * 16);
+        }
+        std::fesetround(original_rm);
+        return {result_64, fcsr};
+    }
+
+    case AluOp::FMADD_BF16: {
+        // Unpack fs1 (ina), fs2 (inb), fs3 (inc)
+        uint16_t fs1_vals[4];
+        uint16_t fs2_vals[4];
+        uint16_t fs3_vals[4];
+        for (int i = 0; i < 4; ++i) {
+            fs1_vals[i] = (uint16_t)(ina >> (i * 16));
+            fs2_vals[i] = (uint16_t)(inb >> (i * 16));
+            fs3_vals[i] = (uint16_t)(inc >> (i * 16)); // Use inc for fs3
+        }
+
+        float results_fp32[4];
+        for (int i = 0; i < 4; ++i) {
+            float f1 = bfloat16_to_float(fs1_vals[i]);
+            float f2 = bfloat16_to_float(fs2_vals[i]);
+            float f3 = bfloat16_to_float(fs3_vals[i]);
+            results_fp32[i] = std::fma(f1, f2, f3); // Use fma for fused multiply-add
+        }
+
+        uint64_t result_64 = 0;
+        for (int i = 0; i < 4; ++i) {
+            result_64 |= (uint64_t)float_to_bfloat16(results_fp32[i]) << (i * 16);
+        }
+        std::fesetround(original_rm);
+        return {result_64, fcsr};
     }
     default: break;
   }

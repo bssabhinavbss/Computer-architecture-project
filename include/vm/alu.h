@@ -172,6 +172,13 @@ enum class AluOp {
 
     FMV_D_X, ///< Floating point move to integer double operation.
     FMV_X_D, ///< Floating point move from integer double operation.
+
+        // BFloat16 Operations
+    FADD_BF16,
+    FSUB_BF16,
+    FMUL_BF16,
+    FMAX_BF16,
+    FMADD_BF16,
 };
 
 inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
@@ -285,6 +292,13 @@ inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
         case AluOp::FDIV_D: os << "FDIV_D"; break;
         case AluOp::FSQRT_D: os << "FSQRT_D"; break;
         case AluOp::FSGNJ_D: os << "FSGNJ_D"; break;
+
+                // BFloat16 Operations
+case AluOp::FADD_BF16: os << "FADD_BF16"; break;
+ case AluOp::FSUB_BF16: os << "FSUB_BF16"; break;
+ case AluOp::FMUL_BF16: os << "FMUL_BF16"; break;
+ case AluOp::FMAX_BF16: os << "FMAX_BF16"; break;
+  case AluOp::FMADD_BF16: os << "FMADD_BF16"; break;
 
 
         default: os << "UNKNOWN"; break;
