@@ -1128,6 +1128,9 @@ bool isFInstruction(const uint32_t &instruction) {
       }
       break;
     }
+    case 0b1000011: {
+      return true;
+    }
     case 0b1010011: {
       if (!(funct7 & 0b1)) {
         if (funct7==0b0100000) {
@@ -1135,6 +1138,23 @@ bool isFInstruction(const uint32_t &instruction) {
         }
         return true;
       }
+      switch(funct7){
+        // kfxxx_bf16
+        case 0b0011000: 
+        case 0b0011001:
+        case 0b0011010:
+        case 0b0011011:
+
+        // kfxxx_fp16
+        case 0b0101000:
+        case 0b0101001:
+        case 0b0101010:
+        case 0b0101011:
+        case 0b0101110:
+
+          return true;
+      }
+      break;
     }
     default: break;
   }
