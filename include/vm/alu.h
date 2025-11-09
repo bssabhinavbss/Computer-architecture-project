@@ -70,6 +70,32 @@ enum class AluOp {
     kDiv_simd8,
     kRem_simd8,
     
+
+    kAdd_simd4, ///<Newly added instruction>///
+    kSub_simd4,
+    kMul_simd4,
+    kLoad_simd4,
+    kDiv_simd4,
+    kRem_simd4,
+
+
+    kAdd_simd2, ///<Newly added instruction>///
+    kSub_simd2,
+    kMul_simd2,
+    kLoad_simd2,
+    kDiv_simd2,
+    kRem_simd2,
+
+
+    kAdd_simdb, ///<Newly added instruction>///
+    kSub_simdb,
+    kMul_simdb,
+    kLoad_simdb,
+    kDiv_simdb,
+    kRem_simdb,
+
+    kEcc_check,
+
     kSll, ///< Shift left logical operation.
     kSllw, ///< Shift left logical word operation.
     kSrl, ///< Shift right logical operation.
@@ -185,7 +211,28 @@ inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
         case AluOp::kDiv_simd8: os << "kDiv_simd8";break;
         case AluOp::kRem_simd8: os << "kRem_simd8";break;
         
+        case AluOp::kAdd_simd4: os << "kAdd_simd4";break;
+        case AluOp::kSub_simd4: os << "kSub_simd4";break;
+        case AluOp::kMul_simd4: os << "kMul_simd4";break;
+        case AluOp::kLoad_simd4: os << "kLoad_simd4";break;
+        case AluOp::kDiv_simd4: os << "kDiv_simd4";break;
+        case AluOp::kRem_simd4: os << "kRem_simd4";break;
 
+        case AluOp::kAdd_simd2: os << "kAdd_simd2";break;
+        case AluOp::kSub_simd2: os << "kSub_simd2";break;
+        case AluOp::kMul_simd2: os << "kMul_simd2";break;
+        case AluOp::kLoad_simd2: os << "kLoad_simd2";break;
+        case AluOp::kDiv_simd2: os << "kDiv_simd2";break;
+        case AluOp::kRem_simd2: os << "kRem_simd2";break;
+
+        case AluOp::kAdd_simdb: os << "kAdd_simdb";break;
+        case AluOp::kSub_simdb: os << "kSub_simdb";break;
+        case AluOp::kMul_simdb: os << "kMul_simdb";break;
+        case AluOp::kLoad_simdb: os << "kLoad_simdb";break;
+        case AluOp::kDiv_simdb: os << "kDiv_simdb";break;
+        case AluOp::kRem_simdb: os << "kRem_simdb";break;
+
+        case AluOp::kEcc_check: os << "kEcc_check";break;
 
         case AluOp::kSll: os << "kSll"; break;
         case AluOp::kSrl: os << "kSrl"; break;

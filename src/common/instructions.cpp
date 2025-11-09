@@ -34,12 +34,38 @@ std::unordered_map<std::string, Instruction> instruction_string_map = {
     {"load_simd16",Instruction::kload_simd16}, //newly added instruction4
     {"rem_simd16",Instruction::krem_simd16}, //newly added instruction5
     {"div_simd16",Instruction::kdiv_simd16}, //newly added instruction6
+
     {"add_simd8",Instruction::kadd_simd8}, //newly added instruction1
     {"sub_simd8",Instruction::ksub_simd8}, //newly added instruction2
     {"mul_simd8",Instruction::kmul_simd8}, //newly added instruction3
     {"load_simd8",Instruction::kload_simd8}, //newly added instruction4
     {"rem_simd8",Instruction::krem_simd8}, //newly added instruction5
     {"div_simd8",Instruction::kdiv_simd8}, //newly added instruction6
+
+
+    {"add_simd4",Instruction::kadd_simd4}, //newly added instruction1
+    {"sub_simd4",Instruction::ksub_simd4}, //newly added instruction2
+    {"mul_simd4",Instruction::kmul_simd4}, //newly added instruction3
+    {"load_simd4",Instruction::kload_simd4}, //newly added instruction4
+    {"rem_simd4",Instruction::krem_simd4}, //newly added instruction5
+    {"div_simd4",Instruction::kdiv_simd4}, //newly added instruction6
+
+    {"add_simd2",Instruction::kadd_simd2}, //newly added instruction1
+    {"sub_simd2",Instruction::ksub_simd2}, //newly added instruction2
+    {"mul_simd2",Instruction::kmul_simd2}, //newly added instruction3
+    {"load_simd2",Instruction::kload_simd2}, //newly added instruction4
+    {"rem_simd2",Instruction::krem_simd2}, //newly added instruction5
+    {"div_simd2",Instruction::kdiv_simd2}, //newly added instruction6
+
+    {"add_simdb",Instruction::kadd_simdb}, //newly added instruction1
+    {"sub_simdb",Instruction::ksub_simdb}, //newly added instruction2
+    {"mul_simdb",Instruction::kmul_simdb}, //newly added instruction3
+    {"load_simdb",Instruction::kload_simdb}, //newly added instruction4
+    {"rem_simdb",Instruction::krem_simdb}, //newly added instruction5
+    {"div_simdb",Instruction::kdiv_simdb}, //newly added instruction6
+
+    {"ecc_check",Instruction::kecc_check},
+
     {"sll", Instruction::ksll},
     {"srl", Instruction::ksrl},
     {"sra", Instruction::ksra},
@@ -93,7 +119,7 @@ std::unordered_map<std::string, Instruction> instruction_string_map = {
     {"lbu", Instruction::klbu},
     {"lhu", Instruction::klhu},
     {"lwu", Instruction::klwu},
-
+    {"lw_ecc", Instruction::klw_ecc},
     {"sb", Instruction::ksb},
     {"sh", Instruction::ksh},
     {"sw", Instruction::ksw},
@@ -200,12 +226,16 @@ static const std::unordered_set<std::string> valid_instructions = {
     "add", "sub", "and", "or", "xor",
     "add_simd32","sub_simd32","mul_simd32","load_simd32","div_simd32",
     "add_simd16","sub_simd16","mul_simd16","load_simd16","div_simd16","rem_simd16",
-    "add_simd8","sub_simd8","mul_simd8","load_simd8","div_simd8","rem_simd8", 
+    "add_simd8","sub_simd8","mul_simd8","load_simd8","div_simd8","rem_simd8",
+    "add_simd4","sub_simd4","mul_simd4","load_simd4","div_simd4","rem_simd4",
+    "add_simd2","sub_simd2","mul_simd2","load_simd2","div_simd2","rem_simd2",
+    "add_simdb","sub_simdb","mul_simdb","load_simdb","div_simdb","rem_simdb",
+    "ecc_check",
     "sll", "srl", "sra", "slt", "sltu", //newly added instruction
     "addw", "subw", "sllw", "srlw", "sraw",
     "addi", "xori", "ori", "andi", "slli", "srli", "srai", "slti", "sltiu",
     "addiw", "slliw", "srliw", "sraiw",
-    "lb", "lh", "lw", "ld", "lbu", "lhu", "lwu",
+    "lb", "lh", "lw", "ld", "lbu", "lhu", "lwu","lw_ecc",
     "sb", "sh", "sw", "sd",
     "beq", "bne", "blt", "bge", "bltu", "bgeu",
     "lui", "auipc",
@@ -251,6 +281,10 @@ static const std::unordered_set<std::string> RTypeInstructions = {
     "add_simd32","sub_simd32","mul_simd32","load_simd32","div_simd32","rem_simd32",
     "add_simd16","sub_simd16","mul_simd16","load_simd16","div_simd16","rem_simd16",
     "add_simd8","sub_simd8","mul_simd8","load_simd8","div_simd8","rem_simd8",
+    "add_simd4","sub_simd4","mul_simd4","load_simd4","div_simd4","rem_simd4",
+    "add_simd2","sub_simd2","mul_simd2","load_simd2","div_simd2","rem_simd2",
+    "add_simdb","sub_simdb","mul_simdb","load_simdb","div_simdb","rem_simdb",
+     "ecc_check",
     "sll", "srl", "sra", "slt", "sltu", //newly added 
 
     // RV64
@@ -267,14 +301,14 @@ static const std::unordered_set<std::string> RTypeInstructions = {
 static const std::unordered_set<std::string> ITypeInstructions = {
     "addi", "xori", "ori", "andi", "slli", "srli", "srai", "slti", "sltiu",
     "addiw", "slliw", "srliw", "sraiw",
-    "lb", "lh", "lw", "ld", "lbu", "lhu", "lwu",
+    "lb", "lh", "lw", "ld", "lbu", "lhu", "lwu","lw_check",
     "jalr"
 };
 
 static const std::unordered_set<std::string> I1TypeInstructions = {
     "addi", "xori", "ori", "andi", "sltiu", "slti",
     "addiw",
-    "lb", "lh", "lw", "ld", "lbu", "lhu", "lwu",
+    "lb", "lh", "lw", "ld", "lbu", "lhu", "lwu","lw_ecc",
     "jalr"
 };
 
@@ -428,6 +462,32 @@ std::unordered_map<std::string, RTypeInstructionEncoding> R_type_instruction_enc
     {"div_simd8",{0b0110011, 0b101, 0b0111111}},// O_GPR_C_GPR_C_GPR
     {"rem_simd8",{0b0110011, 0b110, 0b0111111}},// O_GPR_C_GPR_C_GPR
 
+
+    {"add_simd4",{0b0110011, 0b000, 0b1111111}},// O_GPR_C_GPR_C_GPR
+    {"sub_simd4",{0b0110011, 0b001, 0b1111111}},// O_GPR_C_GPR_C_GPR
+    {"mul_simd4",{0b0110011, 0b010, 0b1111111}},// O_GPR_C_GPR_C_GPR
+    {"load_simd4",{0b0110011, 0b011, 0b1111111}},// O_GPR_C_GPR_C_GPR
+    {"div_simd4",{0b0110011, 0b101, 0b1111111}},// O_GPR_C_GPR_C_GPR
+    {"rem_simd4",{0b0110011, 0b110, 0b1111111}},// O_GPR_C_GPR_C_GPR
+
+
+    {"add_simd2",{0b0110011, 0b000, 0b0111110}},// O_GPR_C_GPR_C_GPR
+    {"sub_simd2",{0b0110011, 0b001, 0b0111110}},// O_GPR_C_GPR_C_GPR
+    {"mul_simd2",{0b0110011, 0b010, 0b0111110}},// O_GPR_C_GPR_C_GPR
+    {"load_simd2",{0b0110011, 0b011, 0b0111110}},// O_GPR_C_GPR_C_GPR
+    {"div_simd2",{0b0110011, 0b101, 0b0111110}},// O_GPR_C_GPR_C_GPR
+    {"rem_simd2",{0b0110011, 0b110, 0b0111110}},// O_GPR_C_GPR_C_GPR
+
+
+    {"add_simdb",{0b0110011, 0b000, 0b0111100}},// O_GPR_C_GPR_C_GPR
+    {"sub_simdb",{0b0110011, 0b001, 0b0111100}},// O_GPR_C_GPR_C_GPR
+    {"mul_simdb",{0b0110011, 0b010, 0b0111100}},// O_GPR_C_GPR_C_GPR
+    {"load_simdb",{0b0110011, 0b011, 0b0111100}},// O_GPR_C_GPR_C_GPR
+    {"div_simdb",{0b0110011, 0b101, 0b0111100}},// O_GPR_C_GPR_C_GPR
+    {"rem_simdb",{0b0110011, 0b110, 0b0111100}},// O_GPR_C_GPR_C_GPR
+    
+    {"ecc_check",{0b0110011, 0b111, 0b0111100}}, //O_GPR_C_GPR_C_GPR
+
     {"or", {0b0110011, 0b110, 0b0000000}}, // O_GPR_C_GPR_C_GPR
     {"and", {0b0110011, 0b111, 0b0000000}}, // O_GPR_C_GPR_C_GPR
     {"sll", {0b0110011, 0b001, 0b0000000}}, // O_GPR_C_GPR_C_GPR
@@ -474,9 +534,11 @@ std::unordered_map<std::string, I1TypeInstructionEncoding> I1_type_instruction_e
     {"lh", {0b0000011, 0b001}}, // O_GPR_C_I_LP_GPR_RP, O_GPR_C_DL
     {"lw", {0b0000011, 0b010}}, // O_GPR_C_I_LP_GPR_RP, O_GPR_C_DL
     {"ld", {0b0000011, 0b011}}, // O_GPR_C_I_LP_GPR_RP, O_GPR_C_DL
+    {"lw_ecc",{0b0000011, 0b111}},// O_GPR_C_I_LP_GPR_RP, O_GPR_C_DL
     {"lbu", {0b0000011, 0b100}}, // O_GPR_C_I_LP_GPR_RP,
     {"lhu", {0b0000011, 0b101}}, // O_GPR_C_I_LP_GPR_RP,
     {"lwu", {0b0000011, 0b110}}, // O_GPR_C_I_LP_GPR_RP,
+    
 
     {"jalr", {0b1100111, 0b000}}, // O_GR_C_I, O_GPR_C_IL
 };
@@ -689,6 +751,29 @@ std::unordered_map<std::string, std::vector<SyntaxType>> instruction_syntax_map 
     {"div_simd8", {SyntaxType::O_GPR_C_GPR_C_GPR}},
     {"rem_simd8", {SyntaxType::O_GPR_C_GPR_C_GPR}},
     
+    {"add_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"sub_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"mul_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"load_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"div_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"rem_simd4", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    
+    {"add_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"sub_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"mul_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"load_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"div_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"rem_simd2", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+
+    {"add_simdb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"sub_simdb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"mul_simdb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"load_simdb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"div_simdb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"rem_simdb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+
+    {"ecc_check",{SyntaxType::O_GPR_C_GPR_C_GPR}},
+
     {"or", {SyntaxType::O_GPR_C_GPR_C_GPR}},
     {"and", {SyntaxType::O_GPR_C_GPR_C_GPR}},
     {"sll", {SyntaxType::O_GPR_C_GPR_C_GPR}},
@@ -711,6 +796,7 @@ std::unordered_map<std::string, std::vector<SyntaxType>> instruction_syntax_map 
     {"lh", {SyntaxType::O_GPR_C_I_LP_GPR_RP, SyntaxType::O_GPR_C_DL}},
     {"lw", {SyntaxType::O_GPR_C_I_LP_GPR_RP, SyntaxType::O_GPR_C_DL}},
     {"ld", {SyntaxType::O_GPR_C_I_LP_GPR_RP, SyntaxType::O_GPR_C_DL}},
+    {"lw_ecc", {SyntaxType::O_GPR_C_I_LP_GPR_RP, SyntaxType::O_GPR_C_DL}},
     {"lbu", {SyntaxType::O_GPR_C_I_LP_GPR_RP}},
     {"lhu", {SyntaxType::O_GPR_C_I_LP_GPR_RP}},
     {"lwu", {SyntaxType::O_GPR_C_I_LP_GPR_RP}},

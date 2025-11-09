@@ -5,6 +5,7 @@
  */
 
 #include "vm/alu.h"
+#include "utils.h"
 #include <cfenv>
 #include <cmath>
 #include <cstdint>
@@ -42,6 +43,12 @@ static std::string decode_fclass(uint16_t res) {
 
 [[nodiscard]] std::pair<uint64_t, bool> Alu::execute(AluOp op, uint64_t a, uint64_t b) {
   switch (op) {
+   case AluOp::kEcc_check: {
+    bool corrected = false, uncorrectable = false;
+    uint64_t decoded = hamming64_57_decode(a, &corrected, &uncorrectable);
+    return {decoded, false};
+    
+    }
     case AluOp::kAdd: {
       auto sa = static_cast<int64_t>(a);
       auto sb = static_cast<int64_t>(b);
@@ -856,7 +863,154 @@ static std::string decode_fclass(uint16_t res) {
                    (static_cast<int64_t>(sr8) & 0xFFLL);
       return {sr, false};
     }
-    
+    case AluOp::kAdd_simd4: {
+    int64_t res = 0;
+    for (int i = 0; i < 16; i++) {
+        int64_t laneA = (a >> (i * 4)) & 0xF;
+        int64_t laneB = (b >> (i * 4)) & 0xF;
+        int64_t sum = laneA + laneB;
+        if (sum > 15) sum = 7; 
+        else if(sum < -8) sum = -8;  // saturate
+        res |= (sum & 0xF) << (i * 4);
+    }
+    return {res,false};
+    }
+    case AluOp::kSub_simd4: {
+     int64_t res = 0;
+    for (int i = 0; i < 16; i++) {
+        int64_t laneA = (a >> (i * 4)) & 0xF;
+        int64_t laneB = (b >> (i * 4)) & 0xF;
+        int64_t sum = laneA - laneB;
+        if (sum > 7) sum = 7;  
+        else if(sum < -8) sum = -8; // saturate
+        res |= (sum & 0xF) << (i * 4);
+    }
+    return {res,false};
+    }
+    case AluOp::kMul_simd4: {
+     int64_t res = 0;
+    for (int i = 0; i < 16; i++) {
+        int64_t laneA = (a >> (i * 4)) & 0xF;
+        int64_t laneB = (b >> (i * 4)) & 0xF;
+        int64_t sum = laneA * laneB;
+        if (sum > 7) sum = 7; 
+        else if(sum < -8) sum = -8;  // saturate
+        res |= (sum & 0xF) << (i * 4);
+    }
+    return {res,false};
+    }
+    case AluOp::kLoad_simd4: {
+     //left empty for now 
+      int64_t res = 0;
+      return {res,false};
+    }
+    case AluOp::kDiv_simd4: {
+      int64_t res = 0;
+     for (int i = 0; i < 16; i++) {
+        int64_t laneA = (a >> (i * 4)) & 0xF;
+        int64_t laneB = (b >> (i * 4)) & 0xF;
+        int64_t sum = laneA / laneB;
+        if (sum > 7) sum = 7; 
+        else if(sum < -8) sum = -8;  // saturate
+        res |= (sum & 0xF) << (i * 4);
+    }
+    return {res,false};
+    }
+    case AluOp::kRem_simd4: {
+     int64_t res = 0;
+     for (int i = 0; i < 16; i++) {
+        int64_t laneA = (a >> (i * 4)) & 0xF;
+        int64_t laneB = (b >> (i * 4)) & 0xF;
+        int64_t sum = laneA % laneB;
+        if (sum > 7) sum = 7; 
+        else if(sum < -8) sum = -8; // saturate
+        res |= (sum & 0xF) << (i * 4);
+    }
+    return {res,false};
+    }
+    case AluOp::kAdd_simd2: {
+     int64_t res = 0;
+    for (int i = 0; i < 32; i++) {
+        int64_t laneA = (a >> (i * 2)) & 0x3;
+        int64_t laneB = (b >> (i * 2)) & 0x3;
+        int64_t sum = laneA + laneB;
+        if (sum > 1) sum = 1;
+        else if(sum < -2) sum =-2;  // saturate
+        res |= (sum & 0x3) << (i * 2);
+    }
+    return {res,false};
+    }
+    case AluOp::kSub_simd2: {
+     int64_t res = 0;
+    for (int i = 0; i < 32; i++) {
+        int64_t laneA = (a >> (i * 2)) & 0x3;
+        int64_t laneB = (b >> (i * 2)) & 0x3;
+        int64_t sum = laneA - laneB;
+        if (sum > 1) sum = 1;  // saturate
+        else if(sum < -2) sum =-2;
+        res |= (sum & 0x3) << (i * 2);
+    }
+    return {res,false};
+    }
+    case AluOp::kMul_simd2: {
+     int64_t res = 0;
+    for (int i = 0; i < 32; i++) {
+        int64_t laneA = (a >> (i * 2)) & 0x3;
+        int64_t laneB = (b >> (i * 2)) & 0x3;
+        int64_t sum = laneA * laneB;
+        if (sum > 1) sum = 1;  // saturate
+        else if(sum < -2) sum =-2;
+        res |= (sum & 0x3) << (i * 2);
+    }
+    return {res,false};
+    }
+    case AluOp::kLoad_simd2: {
+     int64_t res = 0;
+     return {res,false};
+    }
+    case AluOp::kDiv_simd2: {
+     int64_t res = 0;
+    for (int i = 0; i < 32; i++) {
+        int64_t laneA = (a >> (i * 2)) & 0x3;
+        int64_t laneB = (b >> (i * 2)) & 0x3;
+        int64_t sum = laneA / laneB;
+        if (sum > 1) sum = 1;  // saturate
+        else if(sum < -2) sum =-2;
+        res |= (sum & 0x3) << (i * 2);
+    }
+    return {res,false};
+    }
+    case AluOp::kRem_simd2: {
+     int64_t res = 0;
+    for (int i = 0; i < 32; i++) {
+        int64_t laneA = (a >> (i * 2)) & 0x3;
+        int64_t laneB = (b >> (i * 2)) & 0x3;
+        int64_t sum = laneA % laneB;
+        if (sum > 1) sum = 1;  // saturate
+        else if(sum < -2) sum =-2;
+        res |= (sum & 0x3) << (i * 2);
+    }
+    return {res,false};
+    }
+    case AluOp::kAdd_simdb: {
+          
+    }
+    case AluOp::kSub_simdb: {
+     
+    }
+    case AluOp::kMul_simdb: {
+     
+    }
+    case AluOp::kLoad_simdb: {
+     
+    }
+    case AluOp::kDiv_simdb: {
+     
+    }
+    case AluOp::kRem_simdb: {
+     
+    }
+
     case AluOp::kSll: {
       uint64_t result = a << (b & 63);
       return {result, false};

@@ -30,7 +30,6 @@ void RVSSControlUnit::SetControlSignals(uint32_t instruction) {
     }
     case 0b0000011: 
     
-    
     {// Load instructions (LB, LH, LW, LD)
       alu_src_ = true;
       mem_to_reg_ = true;
@@ -161,6 +160,18 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 return alu::AluOp::kAdd_simd8;
                 break;
             }
+            case 0b1111111:{
+                return alu::AluOp::kAdd_simd4;
+                break;
+            }
+            case 0b0111110:{
+                return alu::AluOp::kAdd_simd2;
+                break;
+            }
+            case 0b0111100:{
+                return alu::AluOp::kAdd_simdb;
+                break;
+            }
             }
             break;
         }
@@ -185,6 +196,18 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
             }
             case 0b0111111: {
                 return alu::AluOp::kSub_simd8;
+                break;
+            }
+            case 0b1111111:{
+                return alu::AluOp::kSub_simd4;
+                break;
+            }
+            case 0b0111110:{
+                return alu::AluOp::kSub_simd2;
+                break;
+            }
+            case 0b0111100:{
+                return alu::AluOp::kSub_simdb;
                 break;
             }
             }
@@ -213,6 +236,18 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 return alu::AluOp::kMul_simd8;
                 break;
             }
+            case 0b1111111:{
+                return alu::AluOp::kMul_simd4;
+                break;
+            }
+            case 0b0111110:{
+                return alu::AluOp::kMul_simd2;
+                break;
+            }
+            case 0b0111100:{
+                return alu::AluOp::kMul_simdb;
+                break;
+            }
             }
             break;
         }
@@ -237,6 +272,18 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
             }
             case 0b0111111: {
                 return alu::AluOp::kLoad_simd8;
+                break;
+            }
+            case 0b1111111:{
+                return alu::AluOp::kLoad_simd4;
+                break;
+            }
+            case 0b0111110:{
+                return alu::AluOp::kLoad_simd2;
+                break;
+            }
+            case 0b0111100:{
+                return alu::AluOp::kLoad_simdb;
                 break;
             }
             }
@@ -283,6 +330,18 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 return alu::AluOp::kDiv_simd8;
                 break;
             }
+            case 0b1111111:{
+                return alu::AluOp::kDiv_simd4;
+                break;
+            }
+            case 0b0111110:{
+                return alu::AluOp::kDiv_simd2;
+                break;
+            }
+            case 0b0111100:{
+                return alu::AluOp::kDiv_simdb;
+                break;
+            }
             }
             break;
         }
@@ -309,6 +368,18 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 return alu::AluOp::kRem_simd8;
                 break;
             }
+            case 0b1111111:{
+                return alu::AluOp::kRem_simd4;
+                break;
+            }
+            case 0b0111110:{
+                return alu::AluOp::kRem_simd2;
+                break;
+            }
+            case 0b0111100:{
+                return alu::AluOp::kRem_simdb;
+                break;
+            }
             }
             break;
         }
@@ -321,6 +392,10 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
             }
             case 0b0000001: {// kRemu
                 return alu::AluOp::kRemu;
+                break;
+            }
+            case 0b0111100: {// kRemuw
+                return alu::AluOp::kEcc_check;
                 break;
             }
             }
@@ -543,6 +618,7 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                         return alu::AluOp::kRemuw;
                         break;
                     }
+                     
                 }
                 break;
             }

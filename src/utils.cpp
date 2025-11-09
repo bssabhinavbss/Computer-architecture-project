@@ -51,7 +51,92 @@ void setupVmStateDirectory() {
 
   
 }
+// ECC decode + correct: Hamming(64,57)
+uint64_t hamming64_57_decode(uint64_t codeword, bool *corrected, bool *uncorrectable) {
+   
+    uint64_t cw = codeword;
+    uint32_t syndrome = 0;
+    for (int i = 0; i < 6; i++) {
+        uint64_t mask = 1ULL << i;
+        int parity = 0;
+        for (int j = 1; j <= 64; j++) {
+            if (j & mask)
+                parity ^= (cw >> (j - 1)) & 1ULL;
+        }
+        if (parity)
+            syndrome |= mask;  // parity mismatch → part of error syndrome
+    }
 
+    // Compute overall parity (checks all 64 bits)
+    bool overall_parity_error = __builtin_parityll(cw);
+
+    *corrected = false;
+    *uncorrectable = false;
+
+    if (syndrome == 0 && !overall_parity_error) {
+        // ✅ No errors
+        return extract_data(cw);
+    }
+    else if (syndrome != 0 && overall_parity_error) {
+        // ✅ Single-bit error correctable (in 1..63)
+        int error_pos = syndrome; // 1..63
+        cw ^= (1ULL << (error_pos - 1));
+        *corrected = true;
+        return extract_data(cw);
+    }
+    else if (syndrome == 0 && overall_parity_error) {
+        // ✅ Error in overall parity bit (64)
+        cw ^= (1ULL << 63);
+        *corrected = true;
+        return extract_data(cw);
+    }
+    else {
+       
+        *uncorrectable = true;
+        return extract_data(cw); // Return original (corrupt) data
+    }
+}
+
+uint64_t extract_data(uint64_t cw) {
+    uint64_t data = 0;
+    int data_index = 0;
+
+    for (int i = 1; i <= 64; i++) {
+        // if i is not a power of two (1, 2, 4, 8, 16, 32, 64)
+        if ((i & (i - 1)) != 0) { 
+            data |= ((cw >> (i - 1)) & 1ULL) << data_index++;
+        }
+    }
+    return data;
+}
+
+// ECC encode: Hamming(64,57)
+uint64_t hamming64_57_encode(uint64_t data) {
+    uint64_t encoded = 0;
+    int data_index = 0;
+
+    // Fill non-parity positions with data bits
+    for (int i = 1; i <= 64; i++) {
+        if ((i & (i - 1)) != 0) { // not a power of two
+            encoded |= ((data >> data_index++) & 1ULL) << (i - 1);
+        }
+    }
+
+    // Compute parity bits
+    for (int i = 0; i < 7; i++) {
+        uint64_t mask = 1ULL << i;
+        int parity = 0;
+        for (int j = 1; j <= 64; j++) {
+            if (j & mask) parity ^= (encoded >> (j - 1)) & 1ULL;
+        }
+        if (parity) encoded |= (1ULL << (mask - 1));
+    }
+
+    // Overall parity bit for SECDED
+    if (__builtin_parityll(encoded)) encoded |= (1ULL << 63);
+
+    return encoded;
+}
 
 int64_t CountLines(const std::string &filename) {
   std::ifstream file(filename);

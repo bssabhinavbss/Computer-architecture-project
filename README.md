@@ -22,3 +22,10 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## References
 - [RISC-V Specifications](https://riscv.org/specifications/)
 - [Five EmbedDev ISA manual](https://five-embeddev.com/riscv-isa-manual/)
+
+## building for mac.os
+- mkdir build
+- cd build
+- CXX=/opt/homebrew/bin/g++-14 CC=/opt/homebrew/bin/gcc-14
+- cmake ..
+- make -j4
