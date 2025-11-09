@@ -231,6 +231,13 @@ std::unordered_map<std::string, Instruction> instruction_string_map = {
   {"fdot.fp16", Instruction::kfdot_fp16},
   {"fmadd.fp16", Instruction::kfmadd_fp16},
 
+  // --- NEW MSFP16 Instructions ---
+  {"fadd.msfp16", Instruction::kfadd_msfp16},
+  {"fsub.msfp16", Instruction::kfsub_msfp16},
+  {"fmul.msfp16", Instruction::kfmul_msfp16},
+  {"fmax.msfp16", Instruction::kfmax_msfp16},
+  {"fmadd.msfp16", Instruction::kfmadd_msfp16},
+
 };
 
 
@@ -288,6 +295,9 @@ static const std::unordered_set<std::string> valid_instructions = {
     "fadd.bf16", "fsub.bf16", "fmul.bf16", "fmax.bf16", "fmadd.bf16",
 
     "fadd.fp16", "fsub.fp16", "fmul.fp16", "fmax.fp16", "fdot.fp16", "fmadd.fp16",
+
+    // MSFP16
+    "fadd.msfp16", "fsub.msfp16", "fmul.msfp16", "fmax.msfp16", "fmadd.msfp16",
 
 };
 
@@ -405,6 +415,8 @@ static const std::unordered_set<std::string> FDExtensionR1TypeInstructions = {
 
    
   "fadd.fp16", "fsub.fp16", "fmul.fp16", "fmax.fp16", "fdot.fp16",
+  // MSFP16
+  "fadd.msfp16", "fsub.msfp16", "fmul.msfp16", "fmax.msfp16",
 };
 
 static const std::unordered_set<std::string> FDExtensionR2TypeInstructions = {
@@ -435,6 +447,7 @@ static const std::unordered_set<std::string> FDExtensionR4TypeInstructions = {
     "fmadd.bf16",
 
   "fmadd.fp16",
+  "fmadd.msfp16",
 };
 
 static const std::unordered_set<std::string> FDExtensionITypeInstructions = {
@@ -661,6 +674,12 @@ std::unordered_map<std::string, FDR1TypeInstructionEncoding> F_D_R1_type_instruc
   {"fmul.fp16", {0b1010011, 0b0101010}}, // O_FPR_C_FPR_C_FPR
   {"fmax.fp16", {0b1010011, 0b0101011}}, // O_FPR_C_FPR_C_FPR
   {"fdot.fp16", {0b1010011, 0b0101110}}, // O_FPR_C_FPR_C_FPR
+
+  // MSFP16
+  {"fadd.msfp16", {0b1010011, 0b0111000}},
+  {"fsub.msfp16", {0b1010011, 0b0111001}},
+  {"fmul.msfp16", {0b1010011, 0b0111010}},
+  {"fmax.msfp16", {0b1010011, 0b0111011}},
 };
 
 std::unordered_map<std::string, FDR2TypeInstructionEncoding> F_D_R2_type_instruction_encoding_map = {
@@ -719,6 +738,8 @@ std::unordered_map<std::string, FDR4TypeInstructionEncoding> F_D_R4_type_instruc
         // BFloat16 Instruction
     {"fmadd.bf16", {0b1000011, 0b10}}, // O_FPR_C_FPR_C_FPR_C_FPR
     {"fmadd.fp16", {0b1000011, 0b11}}, // O_FPR_C_FPR_C_FPR_C_FPR
+    // MSFP16
+  {"fmadd.msfp16", {0b0001011, 0b00}}, // O_FPR_C_FPR_C_FPR_C_FPR
 };
 
 std::unordered_map<std::string, FDITypeInstructionEncoding> F_D_I_type_instruction_encoding_map = {
@@ -1018,6 +1039,14 @@ std::unordered_map<std::string, std::vector<SyntaxType>> instruction_syntax_map 
   {"fmax.fp16", {SyntaxType::O_FPR_C_FPR_C_FPR}},
   {"fdot.fp16", {SyntaxType::O_FPR_C_FPR_C_FPR}},
   {"fmadd.fp16", {SyntaxType::O_FPR_C_FPR_C_FPR_C_FPR}},
+
+
+  // MSFP16
+  {"fadd.msfp16", {SyntaxType::O_FPR_C_FPR_C_FPR}},
+  {"fsub.msfp16", {SyntaxType::O_FPR_C_FPR_C_FPR}},
+  {"fmul.msfp16", {SyntaxType::O_FPR_C_FPR_C_FPR}},
+  {"fmax.msfp16", {SyntaxType::O_FPR_C_FPR_C_FPR}},
+  {"fmadd.msfp16", {SyntaxType::O_FPR_C_FPR_C_FPR_C_FPR}},
 };
 
 bool isValidInstruction(const std::string &instruction) {
@@ -1131,6 +1160,9 @@ bool isFInstruction(const uint32_t &instruction) {
     case 0b1000011: {
       return true;
     }
+    case 0b0001011: { // Custom opcode for fmadd.msfp16
+      return true;
+    }
     case 0b1010011: {
       if (!(funct7 & 0b1)) {
         if (funct7==0b0100000) {
@@ -1151,6 +1183,12 @@ bool isFInstruction(const uint32_t &instruction) {
         case 0b0101010:
         case 0b0101011:
         case 0b0101110:
+
+        // kfxxx_msfp16
+        case 0b0111000:
+        case 0b0111001:
+        case 0b0111010:
+        case 0b0111011:
 
           return true;
       }

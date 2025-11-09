@@ -187,6 +187,14 @@ enum class AluOp {
   FMAX_FP16,
   FDOT_FP16,
   FMADD_FP16,
+
+  // MSFP16 Brainwave
+
+  FADD_MSFP16,
+  FSUB_MSFP16,
+  FMUL_MSFP16,
+  FMAX_MSFP16,
+  FMADD_MSFP16,
 };
 
 inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
@@ -315,6 +323,13 @@ case AluOp::FMUL_FP16: os << "FMUL_FP16"; break;
 case AluOp::FMAX_FP16: os << "FMAX_FP16"; break;
 case AluOp::FDOT_FP16: os << "FDOT_FP16"; break;
 case AluOp::FMADD_FP16: os << "FMADD_FP16"; break;
+
+// MSFP16 Operations
+  case AluOp::FADD_MSFP16: os << "FADD_MSFP16"; break;
+  case AluOp::FSUB_MSFP16: os << "FSUB_MSFP16"; break;
+  case AluOp::FMUL_MSFP16: os << "FMUL_MSFP16"; break;
+  case AluOp::FMAX_MSFP16: os << "FMAX_MSFP16"; break;
+  case AluOp::FMADD_MSFP16: os << "FMADD_MSFP16"; break;
 
 
         default: os << "UNKNOWN"; break;

@@ -257,6 +257,14 @@ enum Instruction {
  kfdot_fp16,
  kfmadd_fp16,
 
+ // MSFP16 Brainwave
+
+ kfadd_msfp16,
+ kfsub_msfp16,
+ kfmul_msfp16,
+ kfmax_msfp16,
+ kfmadd_msfp16,
+
   
 
   INVALID,
@@ -525,6 +533,17 @@ inline constexpr std::array<InstructionEncoding, static_cast<size_t>(Instruction
 
  // R4-Type (using opcode 0b1000011 and custom fmt=0b11)
  InstructionEncoding(Instruction::kfmadd_fp16, 0b1000011, 0b11, -1, -1, -1, -1),
+
+ // MSFP16 Brainwave
+
+ // --- MSFP16 (4× packed with shared exponent) ---
+  // R-type on 0b1010011
+  InstructionEncoding(Instruction::kfadd_msfp16, 0b1010011, -1, -1, -1, -1, 0b0111000), // fadd.msfp16
+  InstructionEncoding(Instruction::kfsub_msfp16, 0b1010011, -1, -1, -1, -1, 0b0111001), // fsub.msfp16
+  InstructionEncoding(Instruction::kfmul_msfp16, 0b1010011, -1, -1, -1, -1, 0b0111010), // fmul.msfp16
+  InstructionEncoding(Instruction::kfmax_msfp16, 0b1010011, -1, -1, -1, -1, 0b0111011), // fmax.msfp16
+  // R4-type on custom-0 opcode
+  InstructionEncoding(Instruction::kfmadd_msfp16, 0b0001011, 0b00, -1, -1, -1, -1), // fmadd.msfp16 (custom)
 
 
 }};

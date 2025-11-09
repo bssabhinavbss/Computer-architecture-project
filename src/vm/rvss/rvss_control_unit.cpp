@@ -114,6 +114,13 @@ void RVSSControlUnit::SetControlSignals(uint32_t instruction) {
       break;
     }
 
+    // --- NEW MSFP16 R4-Type ---
+    case 0b0001011: { // Custom FMADD.MSFP16
+      reg_write_ = true;
+      alu_op_ = true;
+      break;
+    }
+
 
 
 
@@ -870,6 +877,19 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
             case 0b0101110: { // kfdot_fp16
                 return alu::AluOp::FDOT_FP16;
             }
+            // --- NEW MSFP16 R-Type ---
+        case 0b0111000: { // kfadd_msfp16
+            return alu::AluOp::FADD_MSFP16;
+        }
+        case 0b0111001: { // kfsub_msfp16
+            return alu::AluOp::FSUB_MSFP16;
+        }
+        case 0b0111010: { // kfmul_msfp16
+            return alu::AluOp::FMUL_MSFP16;
+        }
+        case 0b0111011: { // kfmax_msfp16
+            return alu::AluOp::FMAX_MSFP16;
+        }
         }
         break;
     }
@@ -905,6 +925,14 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
             case 0b00: return alu::AluOp::kFnmadd_s; // FNMADD.S
             case 0b01: return alu::AluOp::FNMADD_D;  // FNMADD.D
             // Add case 0b10: return alu::AluOp::kFnmadd_bf16; if you define it later
+            default: return alu::AluOp::kNone;
+        }
+    }
+
+    // --- NEW MSFP16 R4-Type ---
+    case 0b0001011: { // FMADD.MSFP16
+        switch (funct2) { // Check fmt
+            case 0b00: return alu::AluOp::FMADD_MSFP16;
             default: return alu::AluOp::kNone;
         }
     }
