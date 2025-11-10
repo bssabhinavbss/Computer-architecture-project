@@ -230,6 +230,7 @@ int main(int argc, char *argv[]) {
                   << vm.registers_.ReadGpr(std::stoi(reg_str.substr(1))) 
                   << std::dec;
         std::cout << "VM_REGISTER_VAL_END"<< std::endl;
+      } else if(reg_str[0] == 'f') {
       } 
       else if (reg_str[0] == 'f') {
         std::cout << "VM_REGISTER_VAL_START";
@@ -238,6 +239,7 @@ int main(int argc, char *argv[]) {
                   << vm.registers_.ReadFpr(std::stoi(reg_str.substr(1))) 
                   << std::dec;
         std::cout << "VM_REGISTER_VAL_END"<< std::endl;
+      }
       } 
       
     }

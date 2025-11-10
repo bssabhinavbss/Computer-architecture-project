@@ -174,6 +174,29 @@ enum class AluOp {
 
     FMV_D_X, ///< Floating point move to integer double operation.
     FMV_X_D, ///< Floating point move from integer double operation.
+
+        // BFloat16 Operations
+    FADD_BF16,
+    FSUB_BF16,
+    FMUL_BF16,
+    FMAX_BF16,
+    FMADD_BF16,
+
+
+    FADD_FP16,
+  FSUB_FP16,
+  FMUL_FP16,
+  FMAX_FP16,
+  FDOT_FP16,
+  FMADD_FP16,
+
+  // MSFP16 Brainwave
+
+  FADD_MSFP16,
+  FSUB_MSFP16,
+  FMUL_MSFP16,
+  FMAX_MSFP16,
+  FMADD_MSFP16,
 };
 
 inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
@@ -288,6 +311,28 @@ inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
         case AluOp::FDIV_D: os << "FDIV_D"; break;
         case AluOp::FSQRT_D: os << "FSQRT_D"; break;
         case AluOp::FSGNJ_D: os << "FSGNJ_D"; break;
+
+                // BFloat16 Operations
+case AluOp::FADD_BF16: os << "FADD_BF16"; break;
+ case AluOp::FSUB_BF16: os << "FSUB_BF16"; break;
+ case AluOp::FMUL_BF16: os << "FMUL_BF16"; break;
+ case AluOp::FMAX_BF16: os << "FMAX_BF16"; break;
+  case AluOp::FMADD_BF16: os << "FMADD_BF16"; break;
+
+
+  case AluOp::FADD_FP16: os << "FADD_FP16"; break;
+case AluOp::FSUB_FP16: os << "FSUB_FP16"; break;
+case AluOp::FMUL_FP16: os << "FMUL_FP16"; break;
+case AluOp::FMAX_FP16: os << "FMAX_FP16"; break;
+case AluOp::FDOT_FP16: os << "FDOT_FP16"; break;
+case AluOp::FMADD_FP16: os << "FMADD_FP16"; break;
+
+// MSFP16 Operations
+  case AluOp::FADD_MSFP16: os << "FADD_MSFP16"; break;
+  case AluOp::FSUB_MSFP16: os << "FSUB_MSFP16"; break;
+  case AluOp::FMUL_MSFP16: os << "FMUL_MSFP16"; break;
+  case AluOp::FMAX_MSFP16: os << "FMAX_MSFP16"; break;
+  case AluOp::FMADD_MSFP16: os << "FMADD_MSFP16"; break;
 
 
         default: os << "UNKNOWN"; break;

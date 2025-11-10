@@ -244,6 +244,31 @@ enum Instruction {
   krem_simdb, //newly added instruction3
   kdiv_simdb, //newly added instruction3
 
+   // BFloat16 Instructions
+ kfadd_bf16,
+ kfsub_bf16,
+ kfmul_bf16,
+ kfmax_bf16,
+ kfmadd_bf16,
+
+ // Float16
+
+ kfadd_fp16,
+ kfsub_fp16,
+ kfmul_fp16,
+ kfmax_fp16,
+ kfdot_fp16,
+ kfmadd_fp16,
+
+ // MSFP16 Brainwave
+
+ kfadd_msfp16,
+ kfsub_msfp16,
+ kfmul_msfp16,
+ kfmax_msfp16,
+ kfmadd_msfp16,
+
+  
   kecc_check,
 
   INVALID,
@@ -334,6 +359,27 @@ inline constexpr std::array<InstructionEncoding, static_cast<size_t>(Instruction
   
   InstructionEncoding(Instruction::kecc_check, 0b0110011, -1, 0b111, -1 ,-1, 0b0111100), //krem_simd8-opcodes to be balanced
 
+  InstructionEncoding(Instruction::kadd_simd4, 0b0110011, -1, 0b000, -1 ,-1, 0b1111111), //kadd_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::ksub_simd4, 0b0110011, -1, 0b001, -1 ,-1, 0b1111111), //ksub_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::kmul_simd4, 0b0110011, -1, 0b010, -1 ,-1, 0b1111111), //kmul_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::kload_simd4, 0b0110011, -1, 0b011, -1 ,-1, 0b1111111), //kload_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::kdiv_simd4, 0b0110011, -1, 0b101, -1 ,-1, 0b1111111), //kdiv_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::krem_simd4, 0b0110011, -1, 0b110, -1 ,-1, 0b1111111), //krem_simd8-opcodes to be balanced
+  
+  InstructionEncoding(Instruction::kadd_simd2, 0b0110011, -1, 0b000, -1 ,-1, 0b0111110), //kadd_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::ksub_simd2, 0b0110011, -1, 0b001, -1 ,-1, 0b0111110), //ksub_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::kmul_simd2, 0b0110011, -1, 0b010, -1 ,-1, 0b0111110), //kmul_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::kload_simd2, 0b0110011, -1, 0b011, -1 ,-1, 0b0111110), //kload_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::kdiv_simd2, 0b0110011, -1, 0b101, -1 ,-1, 0b0111110), //kdiv_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::krem_simd2, 0b0110011, -1, 0b110, -1 ,-1, 0b0111110), //krem_simd8-opcodes to be balanced
+  
+  InstructionEncoding(Instruction::kadd_simdb, 0b0110011, -1, 0b000, -1 ,-1, 0b0111100), //kadd_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::ksub_simdb, 0b0110011, -1, 0b001, -1 ,-1, 0b0111100), //ksub_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::kmul_simdb, 0b0110011, -1, 0b010, -1 ,-1, 0b0111100), //kmul_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::kload_simdb, 0b0110011, -1, 0b011, -1 ,-1, 0b0111100), //kload_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::kdiv_simdb, 0b0110011, -1, 0b101, -1 ,-1, 0b0111100), //kdiv_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::krem_simdb, 0b0110011, -1, 0b110, -1 ,-1, 0b0111100), //krem_simd8-opcodes to be balanced
+  
   InstructionEncoding(Instruction::kmul,        0b0110011, -1, 0b000, -1, -1, 0b0000001), // kmul
   InstructionEncoding(Instruction::kmulh,       0b0110011, -1, 0b001, -1, -1, 0b0000001), // kmulh
   InstructionEncoding(Instruction::kmulhsu,     0b0110011, -1, 0b010, -1, -1, 0b0000001), // kmulhsu
@@ -494,6 +540,39 @@ inline constexpr std::array<InstructionEncoding, static_cast<size_t>(Instruction
   InstructionEncoding(Instruction::kfmsub_d, 0b1000111, 0b01, -1, -1, -1, -1), // kfmsub_d 
   InstructionEncoding(Instruction::kfnmsub_d, 0b1001011, 0b01, -1, -1, -1, -1), // kfnmsub_d
   InstructionEncoding(Instruction::kfnmadd_d, 0b1001111, 0b01, -1, -1, -1, -1), // kfnmadd_d
+
+// BFloat16 instructions
+ // R-Type (using opcode 0b1010011 and custom funct7)
+ InstructionEncoding(Instruction::kfadd_bf16, 0b1010011, -1, -1, -1, -1, 0b0011000), // kfadd_bf16
+ InstructionEncoding(Instruction::kfsub_bf16, 0b1010011, -1, -1, -1, -1, 0b0011001), // kfsub_bf16
+ InstructionEncoding(Instruction::kfmul_bf16, 0b1010011, -1, -1, -1, -1, 0b0011010), // kfmul_bf16
+ InstructionEncoding(Instruction::kfmax_bf16, 0b1010011, -1, -1, -1, -1, 0b0011011), // kfmax_bf16
+ 
+ // R4-Type (using opcode 0b1000011 and custom funct2/fmt)
+ // Changed fmt from 0b10 (conflicts with fp16) to 0b11 (reserved custom)
+ InstructionEncoding(Instruction::kfmadd_bf16, 0b1000011, 0b10, -1, -1, -1, -1), // kfmadd_bf16
+
+ // R-Type (using opcode 0b1010011 and new custom funct7)
+// R-Type (using opcode 0b1010011 and new custom funct7)
+ InstructionEncoding(Instruction::kfadd_fp16, 0b1010011, -1, -1, -1, -1, 0b0101000), // kfadd_fp16
+ InstructionEncoding(Instruction::kfsub_fp16, 0b1010011, -1, -1, -1, -1, 0b0101001), // kfsub_fp16
+ InstructionEncoding(Instruction::kfmul_fp16, 0b1010011, -1, -1, -1, -1, 0b0101010), // kfmul_fp16
+ InstructionEncoding(Instruction::kfmax_fp16, 0b1010011, -1, -1, -1, -1, 0b0101011), // kfmax_fp16
+ InstructionEncoding(Instruction::kfdot_fp16, 0b1010011, -1, -1, -1, -1, 0b0101110), // kfdot_fp16
+
+ // R4-Type (using opcode 0b1000011 and custom fmt=0b11)
+ InstructionEncoding(Instruction::kfmadd_fp16, 0b1000011, 0b11, -1, -1, -1, -1),
+
+ // MSFP16 Brainwave
+
+ // --- MSFP16 (4× packed with shared exponent) ---
+  // R-type on 0b1010011
+  InstructionEncoding(Instruction::kfadd_msfp16, 0b1010011, -1, -1, -1, -1, 0b0111000), // fadd.msfp16
+  InstructionEncoding(Instruction::kfsub_msfp16, 0b1010011, -1, -1, -1, -1, 0b0111001), // fsub.msfp16
+  InstructionEncoding(Instruction::kfmul_msfp16, 0b1010011, -1, -1, -1, -1, 0b0111010), // fmul.msfp16
+  InstructionEncoding(Instruction::kfmax_msfp16, 0b1010011, -1, -1, -1, -1, 0b0111011), // fmax.msfp16
+  // R4-type on custom-0 opcode
+  InstructionEncoding(Instruction::kfmadd_msfp16, 0b0001011, 0b00, -1, -1, -1, -1), // fmadd.msfp16 (custom)
 
 
 }};

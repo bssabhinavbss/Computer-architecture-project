@@ -12,8 +12,331 @@
 #include <cstring>
 #include <iostream>
 #include <vector>
+#include <array>
+#include <climits>   // for INT_MIN, INT_MAX
+// #include <cmath>     // for frexp, ldexp, fabs, lrintf
+
 
 namespace alu {
+
+
+  #include <cstdint>
+#include <cfenv>
+#include <cmath>
+#include <cstring>   // memcpy
+
+// Safe bit-casts (no aliasing UB)
+static inline uint32_t f32_to_bits(float f) {
+    uint32_t u;
+    std::memcpy(&u, &f, sizeof u);
+    return u;
+}
+static inline float bits_to_f32(uint32_t u) {
+    float f;
+    std::memcpy(&f, &u, sizeof f);
+    return f;
+}
+
+
+// Convert IEEE 754 half (binary16) -> float32
+static inline float float16_to_float(uint16_t h) {
+    uint32_t sign  = (uint32_t)(h & 0x8000u) << 16;      // sign to bit 31
+    uint32_t exp_h = (uint32_t)(h & 0x7C00u) >> 10;      // 5-bit exponent
+    uint32_t man_h = (uint32_t)(h & 0x03FFu);            // 10-bit mantissa
+
+    uint32_t out;
+
+    if (exp_h == 0) { // zero or subnormal
+        if (man_h == 0) {
+            // +/- 0
+            out = sign; // exponent=0, mantissa=0
+        } else {
+            // subnormal -> normalize
+            int shift = 0;
+            while ((man_h & 0x0400u) == 0) { // bring leading 1 to bit 10
+                man_h <<= 1;
+                ++shift;
+            }
+            // remove the leading 1 (implicit)
+            man_h &= 0x03FFu;
+            // exponent after normalization:
+            // original exponent is -14 (half subnormals), minus extra left shifts
+            int32_t exp_f = (127 - 15) - shift + 1; // +1 because we placed the leading 1
+            uint32_t exp_f_bits = (uint32_t)(exp_f & 0xFF) << 23;
+            uint32_t man_f_bits = man_h << 13; // 10 -> 23 mantissa alignment
+            out = sign | exp_f_bits | man_f_bits;
+        }
+    } else if (exp_h == 0x1Fu) { // Inf/NaN
+        // Map to float32 Inf/NaN
+        uint32_t man_f_bits = (man_h ? ((man_h << 13) | 0x00400000u) : 0u); // set quiet bit if NaN
+        out = sign | 0x7F800000u | man_f_bits;
+    } else {
+        // normal: (exp_h - 15 + 127)
+        uint32_t exp_f_bits = ((exp_h - 15u + 127u) & 0xFFu) << 23;
+        uint32_t man_f_bits = man_h << 13;
+        out = sign | exp_f_bits | man_f_bits;
+    }
+
+    return bits_to_f32(out);
+}
+
+// Convert float32 -> IEEE 754 half (binary16), round to nearest-even
+static inline uint16_t float_to_float16(float f) {
+    uint32_t u = f32_to_bits(f);
+    uint32_t sign = (u >> 16) & 0x8000u;
+    uint32_t exp  = (u >> 23) & 0xFFu;
+    uint32_t man  =  u & 0x007FFFFFu;
+
+    // NaN
+    if ((exp == 0xFFu) && (man != 0)) {
+        // quiet NaN with payload
+        uint16_t payload = (uint16_t)(man >> 13);
+        return (uint16_t)(sign | 0x7C00u | (payload ? payload : 0x0001u));
+    }
+    // Inf
+    if ((exp == 0xFFu) && (man == 0)) {
+        return (uint16_t)(sign | 0x7C00u);
+    }
+
+    // Normalize or denormalize
+    int32_t new_exp = (int32_t)exp - 127 + 15; // rebias to half
+
+    if (new_exp >= 0x1F) {
+        // Overflow -> Inf
+        return (uint16_t)(sign | 0x7C00u);
+    }
+
+    if (new_exp <= 0) {
+        // Subnormal or zero in half
+        if (new_exp < -10) {
+            // too small => zero
+            return (uint16_t)sign;
+        }
+        // subnormal: put the hidden leading 1 back then shift right
+        // 0x800000 is the implicit 1 for float32 mantissa
+        uint32_t sub = (man | 0x00800000u) >> (uint32_t)(1 - new_exp); // shift in [1..10]
+        // round to nearest even using the lower 13 bits
+        uint32_t round_bit = (sub & 0x00001000u);
+        uint32_t sticky    = (sub & 0x00001FFFu);
+        sub = (sub + 0x00001000u) >> 13; // add half-ULP then chop
+        if ((sticky == 0x00001000u) && (sub & 1u)) {
+            // tie to even already handled by the add; nothing extra needed
+        }
+        return (uint16_t)(sign | (sub & 0x03FFu));
+    }
+
+    // Normal half: round mantissa from 23 to 10 bits
+    uint32_t mant_rounded = man;
+    uint32_t round_bits   = mant_rounded & 0x1FFFu; // 13 LSBs
+    mant_rounded >>= 13;                             // keep top 10 mantissa bits
+
+    // round to nearest even
+    if (round_bits > 0x1000u || (round_bits == 0x1000u && (mant_rounded & 1u))) {
+        mant_rounded++;
+        if (mant_rounded == 0x400u) { // mantissa overflow -> bump exponent
+            mant_rounded = 0;
+            new_exp++;
+            if (new_exp >= 0x1F) {
+                return (uint16_t)(sign | 0x7C00u); // Inf
+            }
+        }
+    }
+
+    return (uint16_t)(sign | ((uint16_t)new_exp << 10) | (uint16_t)(mant_rounded & 0x03FFu));
+}
+
+// Extract lane i (0..3) from a 64-bit packed word of 4×fp16
+static inline uint16_t fp16_lane(uint64_t x, int i) {
+    return (uint16_t)((x >> (i * 16)) & 0xFFFFu);
+}
+
+// Insert lane i into a 64-bit packed word
+static inline void fp16_set_lane(uint64_t &dst, int i, uint16_t h) {
+    const uint64_t mask = ~(0xFFFFull << (i * 16));
+    dst = (dst & mask) | ((uint64_t)(h & 0xFFFFu) << (i * 16));
+}
+
+
+
+// --- MSFP16 PACK / UNPACK ---
+
+/**
+ * MSFP16 format:
+ *   [8-bit shared exponent][14-bit lane0][14-bit lane1][14-bit lane2][14-bit lane3]
+ *   Each 14-bit lane: [1 sign][13 mantissa]
+ *   Mantissa has NO implicit 1 (pure fixed-point fraction)
+ *   Shared exponent is biased by +127 (same as IEEE-754 single)
+ */
+
+// ------------------- UNPACK -------------------
+static inline std::array<float, 4> msfp16_unpack(uint64_t reg)
+{
+    std::array<float, 4> out;
+
+    uint32_t shared_exp_bits = (reg >> 56) & 0xFF;
+    if (shared_exp_bits == 0)
+    {
+        out.fill(0.0f);
+        return out;
+    }
+
+    int e_unb = (int)shared_exp_bits - 127; // unbiased exponent
+
+    for (int i = 0; i < 4; ++i)
+    {
+        uint32_t lane_bits = (reg >> (i * 14)) & 0x3FFF;
+        int s = (lane_bits >> 13) & 1;
+        uint32_t m = lane_bits & 0x1FFF;
+
+        if (m == 0)
+        {
+            out[i] = s ? -0.0f : 0.0f;
+            continue;
+        }
+
+        float frac = (float)m / (float)(1u << 13);
+        float val = std::ldexp(frac, e_unb);
+        out[i] = s ? -val : val;
+    }
+    return out;
+}
+
+// ------------------- PACK -------------------
+static inline uint64_t msfp16_pack(const std::array<float, 4> &vals)
+{
+    bool all_zero = true;
+    int e_max = INT_MIN;
+
+    // --- Decompose into sign, exponent, fraction ---
+    auto decompose = [](float x, int &s, int &e, float &frac)
+    {
+        if (x == 0.0f)
+        {
+            s = 0;
+            e = INT_MIN;
+            frac = 0.0f;
+            return;
+        }
+        s = std::signbit(x) ? 1 : 0;
+        float ax = std::fabs(x);
+        int ei;
+        float m = std::frexp(ax, &ei); // ax = m * 2^ei, m in [0.5, 1)
+        frac = m * 2.0f;               // [1, 2)
+        e = ei - 1;                    // unbiased exponent
+    };
+
+    int S[4], E[4];
+    float F[4];
+    for (int i = 0; i < 4; ++i)
+    {
+        decompose(vals[i], S[i], E[i], F[i]);
+        if (E[i] != INT_MIN)
+        {
+            all_zero = false;
+            e_max = std::max(e_max, E[i]);
+        }
+    }
+
+    if (all_zero)
+        return 0ull;
+
+    // Clamp shared exponent to representable range
+    if (e_max > 127)
+        e_max = 127;
+    if (e_max < -126)
+        e_max = -126;
+
+    uint32_t shared_exp_bits = (uint32_t)(e_max + 127);
+
+    // --- Quantize each lane ---
+// --- Quantize each lane ---
+auto quant_lane = [&](int s, int e, float frac) -> uint16_t
+{
+    if (e == INT_MIN)
+        return (uint16_t)(s << 13); // ±0
+
+    int shift = e_max - e;
+    float scaled = std::ldexp(frac, -shift); // frac * 2^{-shift}
+    float f = scaled * (float)(1 << 13);
+
+    // Manual clamp for cross-compiler safety
+    if (f < 0.0f) f = 0.0f;
+    else if (f > (float)((1 << 13) - 1)) f = (float)((1 << 13) - 1);
+
+    int mag = (int)std::lrintf(f);
+    return (uint16_t)((s << 13) | (mag & 0x1FFF));
+};
+
+
+    uint64_t lanes = 0;
+    for (int i = 0; i < 4; ++i)
+    {
+        uint16_t lane = quant_lane(S[i], E[i], F[i]);
+        lanes |= (uint64_t)lane << (i * 14);
+    }
+
+    return lanes | ((uint64_t)shared_exp_bits << 56);
+}
+
+// --- End MSFP16 Helper Functions ---
+
+
+
+
+ // Converts a 32-bit float to a 16-bit bfloat16 (RTNE).
+
+// Converts a 32-bit float to a 16-bit bfloat16 (RTNE).
+
+// Converts a 32-bit float to a 16-bit bfloat16 (RTNE).
+
+uint16_t float_to_bfloat16(float f) {
+    union {
+        float f;
+        uint32_t u;
+    } un;
+    un.f = f;
+
+    // Handle NaN
+    if (std::isnan(f)) {
+        // A standard qNaN bfloat16 (sign bit, all exponent, quiet bit)
+        return (uint16_t)((un.u >> 16) & 0x8000) | 0x7FC0;
+    }
+
+    // Handle Infinity
+    if (std::isinf(f)) {
+        return (uint16_t)((un.u >> 16) & 0x8000) | 0x7F80;
+    }
+
+    // Get the 16 bits that will be *discarded*
+    uint32_t lsb = un.u & 0xFFFF;
+    
+    // Perform Round-to-Nearest-Even
+    // Check if discarded bits are > 0.5 (0x8000)
+    // Or if they are == 0.5 (0x8000) AND the last *kept* bit is 1
+    if (lsb > 0x8000 || (lsb == 0x8000 && (un.u & 0x10000))) {
+        // Round up
+        un.u += 0x10000;
+    }
+
+    // Return the upper 16 bits
+    return (uint16_t)(un.u >> 16);
+}
+
+
+// Converts a 16-bit bfloat16 to a 32-bit float.
+
+float bfloat16_to_float(uint16_t b) {
+    union {
+        uint32_t u;
+        float f;
+    } un;
+    
+    un.u = (uint32_t)b << 16;
+    return un.f;
+}
+
+
+
 
 static std::string decode_fclass(uint16_t res) {
   static const std::vector<std::string> labels = {
@@ -1290,6 +1613,192 @@ static std::string decode_fclass(uint16_t res) {
       }
       break;
     }
+    case AluOp::FADD_BF16: {
+        // Unpack 4x BF16 from ina (fs1) and inb (fs2)
+        uint16_t fs1_vals[4];
+        uint16_t fs2_vals[4];
+        for (int i = 0; i < 4; ++i) {
+            fs1_vals[i] = (uint16_t)(ina >> (i * 16));
+            fs2_vals[i] = (uint16_t)(inb >> (i * 16));
+        }
+
+        float results_fp32[4];
+        // Convert, Compute, Convert back
+        for (int i = 0; i < 4; ++i) {
+            float f1 = bfloat16_to_float(fs1_vals[i]);
+            float f2 = bfloat16_to_float(fs2_vals[i]);
+            results_fp32[i] = f1 + f2;
+        }
+
+        // Pack results back into a uint64_t
+        uint64_t result_64 = 0;
+        for (int i = 0; i < 4; ++i) {
+            result_64 |= (uint64_t)float_to_bfloat16(results_fp32[i]) << (i * 16);
+        }
+        std::fesetround(original_rm); // Restore rounding mode
+        return {result_64, fcsr}; // Return packed result, fcsr might need adjustment later
+    } // No break needed after return
+
+    case AluOp::FSUB_BF16: {
+        uint16_t fs1_vals[4];
+        uint16_t fs2_vals[4];
+        for (int i = 0; i < 4; ++i) {
+            fs1_vals[i] = (uint16_t)(ina >> (i * 16));
+            fs2_vals[i] = (uint16_t)(inb >> (i * 16));
+        }
+        float results_fp32[4];
+        for (int i = 0; i < 4; ++i) {
+            float f1 = bfloat16_to_float(fs1_vals[i]);
+            float f2 = bfloat16_to_float(fs2_vals[i]);
+            results_fp32[i] = f1 - f2;
+        }
+        uint64_t result_64 = 0;
+        for (int i = 0; i < 4; ++i) {
+            result_64 |= (uint64_t)float_to_bfloat16(results_fp32[i]) << (i * 16);
+        }
+        std::fesetround(original_rm);
+        return {result_64, fcsr};
+    }
+
+    case AluOp::FMUL_BF16: {
+        uint16_t fs1_vals[4];
+        uint16_t fs2_vals[4];
+        for (int i = 0; i < 4; ++i) {
+            fs1_vals[i] = (uint16_t)(ina >> (i * 16));
+            fs2_vals[i] = (uint16_t)(inb >> (i * 16));
+        }
+        float results_fp32[4];
+        for (int i = 0; i < 4; ++i) {
+            float f1 = bfloat16_to_float(fs1_vals[i]);
+            float f2 = bfloat16_to_float(fs2_vals[i]);
+            results_fp32[i] = f1 * f2;
+        }
+        uint64_t result_64 = 0;
+        for (int i = 0; i < 4; ++i) {
+            result_64 |= (uint64_t)float_to_bfloat16(results_fp32[i]) << (i * 16);
+        }
+        std::fesetround(original_rm);
+        return {result_64, fcsr};
+    }
+
+    case AluOp::FMAX_BF16: {
+        uint16_t fs1_vals[4];
+        uint16_t fs2_vals[4];
+        for (int i = 0; i < 4; ++i) {
+            fs1_vals[i] = (uint16_t)(ina >> (i * 16));
+            fs2_vals[i] = (uint16_t)(inb >> (i * 16));
+        }
+        float results_fp32[4];
+        for (int i = 0; i < 4; ++i) {
+            float f1 = bfloat16_to_float(fs1_vals[i]);
+            float f2 = bfloat16_to_float(fs2_vals[i]);
+            // Handle NaNs according to standard fmax behavior if necessary
+            results_fp32[i] = (f1 > f2) ? f1 : f2; // Simplified max
+        }
+        uint64_t result_64 = 0;
+        for (int i = 0; i < 4; ++i) {
+            result_64 |= (uint64_t)float_to_bfloat16(results_fp32[i]) << (i * 16);
+        }
+        std::fesetround(original_rm);
+        return {result_64, fcsr};
+    }
+
+
+
+case AluOp::FADD_FP16: {
+    uint64_t result_64 = 0;
+    for (int i = 0; i < 4; ++i) {
+        const uint16_t a_h = fp16_lane(ina, i);
+        const uint16_t b_h = fp16_lane(inb, i);
+        const float f1 = float16_to_float(a_h);
+        const float f2 = float16_to_float(b_h);
+        const float rf = f1 + f2;
+        const uint16_t r_h = float_to_float16(rf);
+        fp16_set_lane(result_64, i, r_h);
+    }
+    std::fesetround(original_rm);
+    return {result_64, fcsr};
+}
+
+case AluOp::FSUB_FP16: {
+    uint64_t result_64 = 0;
+    for (int i = 0; i < 4; ++i) {
+        const uint16_t a_h = fp16_lane(ina, i);
+        const uint16_t b_h = fp16_lane(inb, i);
+        const float f1 = float16_to_float(a_h);
+        const float f2 = float16_to_float(b_h);
+        const float rf = f1 - f2;
+        const uint16_t r_h = float_to_float16(rf);
+        fp16_set_lane(result_64, i, r_h);
+    }
+    std::fesetround(original_rm);
+    return {result_64, fcsr};
+}
+
+case AluOp::FMUL_FP16: {
+    uint64_t result_64 = 0;
+    for (int i = 0; i < 4; ++i) {
+        const uint16_t a_h = fp16_lane(ina, i);
+        const uint16_t b_h = fp16_lane(inb, i);
+        const float f1 = float16_to_float(a_h);
+        const float f2 = float16_to_float(b_h);
+        const float rf = f1 * f2;
+        const uint16_t r_h = float_to_float16(rf);
+        fp16_set_lane(result_64, i, r_h);
+    }
+    std::fesetround(original_rm);
+    return {result_64, fcsr};
+}
+
+case AluOp::FMAX_FP16: {
+    uint64_t result_64 = 0;
+    for (int i = 0; i < 4; ++i) {
+        const uint16_t a_h = fp16_lane(ina, i);
+        const uint16_t b_h = fp16_lane(inb, i);
+        const float f1 = float16_to_float(a_h);
+        const float f2 = float16_to_float(b_h);
+        const float rf = std::fmax(f1, f2);  // correct NaN handling
+        const uint16_t r_h = float_to_float16(rf);
+        fp16_set_lane(result_64, i, r_h);
+    }
+    std::fesetround(original_rm);
+    return {result_64, fcsr};
+}
+
+case AluOp::FDOT_FP16: {
+    float acc = 0.0f;
+    for (int i = 0; i < 4; ++i) {
+        const uint16_t a_h = fp16_lane(ina, i);
+        const uint16_t b_h = fp16_lane(inb, i);
+        const float f1 = float16_to_float(a_h);
+        const float f2 = float16_to_float(b_h);
+        acc = std::fma(f1, f2, acc); // accurate accumulation
+    }
+    const uint16_t out_h = float_to_float16(acc);
+    // replicate the scalar dot across all lanes (as per your spec)
+    uint64_t result_64 = 0;
+    for (int i = 0; i < 4; ++i) fp16_set_lane(result_64, i, out_h);
+    std::fesetround(original_rm);
+    return {result_64, fcsr};
+}
+
+case AluOp::FMADD_FP16: {
+    uint64_t result_64 = 0;
+    for (int i = 0; i < 4; ++i) {
+        const uint16_t a_h = fp16_lane(ina, i);
+        const uint16_t b_h = fp16_lane(inb, i);
+        const uint16_t c_h = fp16_lane(inc, i);
+        const float f1 = float16_to_float(a_h);
+        const float f2 = float16_to_float(b_h);
+        const float f3 = float16_to_float(c_h);
+        const float rf = std::fma(f1, f2, f3); // fused
+        const uint16_t r_h = float_to_float16(rf);
+        fp16_set_lane(result_64, i, r_h);
+    }
+    std::fesetround(original_rm);
+    return {result_64, fcsr};
+}
+
     case AluOp::FCLASS_S: {
       auto a_bits = static_cast<uint32_t>(ina);
       float af;
@@ -1324,6 +1833,105 @@ static std::string decode_fclass(uint16_t res) {
       std::memcpy(&result, &int_bits, sizeof(float));
       break;
     }
+        case AluOp::FMADD_BF16: {
+        // Unpack fs1 (ina), fs2 (inb), fs3 (inc)
+        uint16_t fs1_vals[4];
+        uint16_t fs2_vals[4];
+        uint16_t fs3_vals[4];
+        for (int i = 0; i < 4; ++i) {
+            fs1_vals[i] = (uint16_t)(ina >> (i * 16));
+            fs2_vals[i] = (uint16_t)(inb >> (i * 16));
+            fs3_vals[i] = (uint16_t)(inc >> (i * 16)); // Use inc for fs3
+        }
+
+        float results_fp32[4];
+        for (int i = 0; i < 4; ++i) {
+            float f1 = bfloat16_to_float(fs1_vals[i]);
+            float f2 = bfloat16_to_float(fs2_vals[i]);
+            float f3 = bfloat16_to_float(fs3_vals[i]);
+            results_fp32[i] = std::fma(f1, f2, f3); // Use fma for fused multiply-add
+        }
+
+        uint64_t result_64 = 0;
+        for (int i = 0; i < 4; ++i) {
+            result_64 |= (uint64_t)float_to_bfloat16(results_fp32[i]) << (i * 16);
+        }
+        std::fesetround(original_rm);
+        return {result_64, fcsr};
+    }
+
+
+    case AluOp::FADD_MSFP16: {
+      std::array<float, 4> vals_a = msfp16_unpack(ina);
+      std::array<float, 4> vals_b = msfp16_unpack(inb);
+      std::array<float, 4> vals_r;
+
+      for(int i=0; i<4; ++i) {
+          vals_r[i] = vals_a[i] + vals_b[i];
+      }
+      
+      uint64_t result_64 = msfp16_pack(vals_r);
+      std::fesetround(original_rm);
+      return {result_64, fcsr};
+  }
+
+  case AluOp::FSUB_MSFP16: {
+      std::array<float, 4> vals_a = msfp16_unpack(ina);
+      std::array<float, 4> vals_b = msfp16_unpack(inb);
+      std::array<float, 4> vals_r;
+
+      for(int i=0; i<4; ++i) {
+          vals_r[i] = vals_a[i] - vals_b[i];
+      }
+      
+      uint64_t result_64 = msfp16_pack(vals_r);
+      std::fesetround(original_rm);
+      return {result_64, fcsr};
+  }
+
+  case AluOp::FMUL_MSFP16: {
+      std::array<float, 4> vals_a = msfp16_unpack(ina);
+      std::array<float, 4> vals_b = msfp16_unpack(inb);
+      std::array<float, 4> vals_r;
+
+      for(int i=0; i<4; ++i) {
+          vals_r[i] = vals_a[i] * vals_b[i];
+      }
+      
+      uint64_t result_64 = msfp16_pack(vals_r);
+      std::fesetround(original_rm);
+      return {result_64, fcsr};
+  }
+  
+  case AluOp::FMAX_MSFP16: {
+      std::array<float, 4> vals_a = msfp16_unpack(ina);
+      std::array<float, 4> vals_b = msfp16_unpack(inb);
+      std::array<float, 4> vals_r;
+
+      for(int i=0; i<4; ++i) {
+          vals_r[i] = std::fmax(vals_a[i], vals_b[i]);
+      }
+      
+      uint64_t result_64 = msfp16_pack(vals_r);
+      std::fesetround(original_rm);
+      return {result_64, fcsr};
+  }
+
+  case AluOp::FMADD_MSFP16: {
+      std::array<float, 4> vals_a = msfp16_unpack(ina); // fs1
+      std::array<float, 4> vals_b = msfp16_unpack(inb); // fs2
+      std::array<float, 4> vals_c = msfp16_unpack(inc); // fs3
+      std::array<float, 4> vals_r;
+
+      for(int i=0; i<4; ++i) {
+          vals_r[i] = std::fma(vals_a[i], vals_b[i], vals_c[i]);
+      }
+      
+      uint64_t result_64 = msfp16_pack(vals_r);
+      std::fesetround(original_rm);
+      return {result_64, fcsr};
+  }
+
     default: break;
   }
 
@@ -1623,6 +2231,8 @@ static std::string decode_fclass(uint16_t res) {
       result = out;
       break;
     }
+        
+
     default: break;
   }
 
