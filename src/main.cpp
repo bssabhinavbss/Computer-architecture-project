@@ -231,6 +231,8 @@ int main(int argc, char *argv[]) {
                   << std::dec;
         std::cout << "VM_REGISTER_VAL_END"<< std::endl;
       } else if(reg_str[0] == 'f') {
+      } 
+      else if (reg_str[0] == 'f') {
         std::cout << "VM_REGISTER_VAL_START";
         std::cout << "0x"
                   << std::hex
@@ -238,6 +240,8 @@ int main(int argc, char *argv[]) {
                   << std::dec;
         std::cout << "VM_REGISTER_VAL_END"<< std::endl;
       }
+      } 
+      
     }
 
   

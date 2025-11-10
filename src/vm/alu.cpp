@@ -5,6 +5,7 @@
  */
 
 #include "vm/alu.h"
+#include "utils.h"
 #include <cfenv>
 #include <cmath>
 #include <cstdint>
@@ -365,6 +366,12 @@ static std::string decode_fclass(uint16_t res) {
 
 [[nodiscard]] std::pair<uint64_t, bool> Alu::execute(AluOp op, uint64_t a, uint64_t b) {
   switch (op) {
+   case AluOp::kEcc_check: {
+    bool corrected = false, uncorrectable = false;
+    uint64_t decoded = hamming64_57_decode(a, &corrected, &uncorrectable);
+    return {decoded, false};
+    
+    }
     case AluOp::kAdd: {
       auto sa = static_cast<int64_t>(a);
       auto sb = static_cast<int64_t>(b);
@@ -1326,6 +1333,7 @@ static std::string decode_fclass(uint16_t res) {
     case AluOp::kRem_simdb: {
      
     }
+
     case AluOp::kSll: {
       uint64_t result = a << (b & 63);
       return {result, false};

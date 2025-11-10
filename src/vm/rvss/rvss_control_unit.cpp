@@ -30,7 +30,6 @@ void RVSSControlUnit::SetControlSignals(uint32_t instruction) {
     }
     case 0b0000011: 
     
-    
     {// Load instructions (LB, LH, LW, LD)
       alu_src_ = true;
       mem_to_reg_ = true;
@@ -411,6 +410,10 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 return alu::AluOp::kRemu;
                 break;
             }
+            case 0b0111100: {// kRemuw
+                return alu::AluOp::kEcc_check;
+                break;
+            }
             }
             break;
         }
@@ -631,6 +634,7 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                         return alu::AluOp::kRemuw;
                         break;
                     }
+                     
                 }
                 break;
             }

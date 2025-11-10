@@ -444,6 +444,10 @@ void RVSSVM::WriteMemory() {
         memory_result_ = static_cast<uint32_t>(memory_controller_.ReadWord(execution_result_));
         break;
       }
+      case 0b111:{
+        memory_result_ = memory_controller_.ReadDoubleWord(execution_result_);
+        break;
+      }
     }
   }
 
@@ -602,9 +606,25 @@ void RVSSVM::WriteBack() {
         break;
       }
       case get_instr_encoding(Instruction::kLoadType).opcode: /* Load */ { 
-        registers_.WriteGpr(rd, memory_result_);
+         uint64_t value = memory_result_;
+        if(funct3 == 0b111){
+
+        if (value < (1ULL << 57)){
+            uint64_t encoded = hamming64_57_encode(value);
+            registers_.WriteGpr(rd, encoded);
+        } else {
+            std::cerr << "ECC encode skipped: data exceeds 57 bits!\n";
+            registers_.WriteGpr(rd, value);
+        }
+        }
+
+        else{
+          
+            registers_.WriteGpr(rd, memory_result_);
+        }
         break;
       }
+      
       case get_instr_encoding(Instruction::kjalr).opcode: /* JALR */
       case get_instr_encoding(Instruction::kjal).opcode: /* JAL */ {
         registers_.WriteGpr(rd, next_pc_);

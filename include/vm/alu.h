@@ -94,6 +94,8 @@ enum class AluOp {
     kDiv_simdb,
     kRem_simdb,
 
+    kEcc_check,
+
     kSll, ///< Shift left logical operation.
     kSllw, ///< Shift left logical word operation.
     kSrl, ///< Shift right logical operation.
@@ -253,6 +255,7 @@ inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
         case AluOp::kDiv_simdb: os << "kDiv_simdb";break;
         case AluOp::kRem_simdb: os << "kRem_simdb";break;
 
+        case AluOp::kEcc_check: os << "kEcc_check";break;
 
         case AluOp::kSll: os << "kSll"; break;
         case AluOp::kSrl: os << "kSrl"; break;

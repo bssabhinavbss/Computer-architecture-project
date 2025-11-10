@@ -55,4 +55,10 @@ void DumpDisasssembly(const std::filesystem::path &filename, AssembledProgram &p
 
 void SetupConfigFile();
 
+uint64_t hamming64_57_encode(uint64_t data);
+
+uint64_t extract_data(uint64_t cw);
+
+uint64_t hamming64_57_decode(uint64_t codeword, bool *corrected, bool *uncorrectable);
+
 #endif // UTILS_H
