@@ -96,6 +96,8 @@ enum class AluOp {
 
     kEcc_check,
 
+
+
     kSll, ///< Shift left logical operation.
     kSllw, ///< Shift left logical word operation.
     kSrl, ///< Shift right logical operation.
@@ -197,6 +199,19 @@ enum class AluOp {
   FMUL_MSFP16,
   FMAX_MSFP16,
   FMADD_MSFP16,
+
+      // === QALU Quantum-Tagged Instructions ===
+   kQAlloc_A,
+   kQAlloc_B,
+   kQHA,
+   kQHB,
+   kQXA,
+   kQXB,
+   kQPhase,
+   kQMeas,
+   kQNormA,
+   kQNormB,
+   // ======================================
 };
 
 inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
@@ -256,6 +271,8 @@ inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
         case AluOp::kRem_simdb: os << "kRem_simdb";break;
 
         case AluOp::kEcc_check: os << "kEcc_check";break;
+
+
 
         case AluOp::kSll: os << "kSll"; break;
         case AluOp::kSrl: os << "kSrl"; break;
@@ -333,6 +350,20 @@ case AluOp::FMADD_FP16: os << "FMADD_FP16"; break;
   case AluOp::FMUL_MSFP16: os << "FMUL_MSFP16"; break;
   case AluOp::FMAX_MSFP16: os << "FMAX_MSFP16"; break;
   case AluOp::FMADD_MSFP16: os << "FMADD_MSFP16"; break;
+
+
+          // === QALU Quantum-Tagged Instructions ===
+   case AluOp::kQAlloc_A: os << "kQAlloc_A"; break;
+   case AluOp::kQAlloc_B: os << "kQAlloc_B"; break;
+   case AluOp::kQHA: os << "kQHA"; break;
+   case AluOp::kQHB: os << "kQHB"; break;
+   case AluOp::kQXA: os << "kQXA"; break;
+   case AluOp::kQXB: os << "kQXB"; break;
+   case AluOp::kQPhase: os << "kQPhase"; break;
+   case AluOp::kQMeas: os << "kQMeas"; break;
+   case AluOp::kQNormA: os << "kQNormA"; break;
+   case AluOp::kQNormB: os << "kQNormB"; break;
+   // ======================================
 
 
         default: os << "UNKNOWN"; break;

@@ -120,6 +120,12 @@ void RVSSControlUnit::SetControlSignals(uint32_t instruction) {
       break;
     }
 
+    case 0b0001010: { // QALU R-type instructions
+      reg_write_ = true;
+      alu_op_ = true;
+      break;
+    }
+
 
 
 
@@ -146,6 +152,9 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
     switch (opcode)
     {
     case 0b0110011: {// R-Type
+
+
+
         switch (funct3)
         {
         case 0b000:{ // kAdd, kSub, kMul
@@ -153,6 +162,10 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
             {
             case 0x0000000: {// kAdd
                 return alu::AluOp::kAdd;
+                break;
+            }
+            case 0b0101010: {
+                return alu::AluOp::kQAlloc_A;
                 break;
             }
             case 0b0100000: {// kSub
@@ -194,6 +207,10 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
         case 0b001: {// kSll, kMulh
             switch (funct7)
             {
+            case 0b0101010: {
+                return alu::AluOp::kQAlloc_B;
+                break;
+            }
             case 0b0000000: {// kSll
                 return alu::AluOp::kSll;
                 break;
@@ -232,6 +249,10 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
         case 0b010: {// kSlt, kMulhsu
             switch (funct7)
             {
+                case 0b0101010: {
+                    return alu::AluOp::kQHA;
+                    break;
+                }
             case 0b0000000: {// kSlt
                 return alu::AluOp::kSlt;
                 break;
@@ -270,6 +291,10 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
         case 0b011: {// kSltu, kMulhu
             switch (funct7)
             {
+                case 0b0101010: {
+                    return alu::AluOp::kQHB;
+                    break;
+                }
             case 0b0000000: {// kSltu
                 return alu::AluOp::kSltu;
                 break;
@@ -308,6 +333,10 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
         case 0b100: {// kXor, kDiv
             switch (funct7)
             {
+                case 0b0101010: {
+                    return alu::AluOp::kQXA;
+                    break;
+                }
             case 0b0000000: {// kXor
                 return alu::AluOp::kXor;
                 break;
@@ -322,6 +351,10 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
         case 0b101: {// kSrl, kSra, kDivu
             switch (funct7)
             {
+                case 0b0101010: {
+                    return alu::AluOp::kQXB;
+                    break;
+                }
             case 0b0000000: {// kSrl
                 return alu::AluOp::kSrl;
                 break;
@@ -364,6 +397,14 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
         case 0b110: {// kOr, kRem
             switch (funct7)
             {
+                case 0b0101010: {
+                    return alu::AluOp::kQPhase;
+                    break;
+                }
+                case 0b0101011: {
+                    return alu::AluOp::kQNormB;
+                    break;
+                }
             case 0b0000000: {// kOr
                 return alu::AluOp::kOr;
                 break;
@@ -402,6 +443,14 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
         case 0b111: {// kAnd, kRemu
             switch (funct7)
             {
+                case 0b0101010: {
+                    return alu::AluOp::kQMeas;
+                    break;
+                }
+                case 0b0101011: {
+                    return alu::AluOp::kQNormA;
+                    break;
+                }
             case 0b0000000: {// kAnd
                 return alu::AluOp::kAnd;
                 break;
@@ -940,6 +989,9 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
             default: return alu::AluOp::kNone;
         }
     }
+
+
+    
 
     
     case 0b0000111: {// F-Type Load

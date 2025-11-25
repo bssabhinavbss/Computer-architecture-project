@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
       }
       } 
       
-    }
+    
 
   
     else if (command.type==command_handler::CommandType::MODIFY_MEMORY) {
