@@ -224,25 +224,21 @@ int main(int argc, char *argv[]) {
     } else if (command.type==command_handler::CommandType::GET_REGISTER) {
       std::string reg_str = command.args[0];
       if (reg_str[0] == 'x') {
-        std::cout << "VM_REGISTER_VAL_START";
+        std::cout << "value: ";
         std::cout << "0x"
                   << std::hex
                   << vm.registers_.ReadGpr(std::stoi(reg_str.substr(1))) 
                   << std::dec;
-        std::cout << "VM_REGISTER_VAL_END"<< std::endl;
+        std::cout << ""<< std::endl;
       } else if(reg_str[0] == 'f') {
-      } 
-      else if (reg_str[0] == 'f') {
-        std::cout << "VM_REGISTER_VAL_START";
+        std::cout << "value: ";
         std::cout << "0x"
                   << std::hex
                   << vm.registers_.ReadFpr(std::stoi(reg_str.substr(1))) 
                   << std::dec;
-        std::cout << "VM_REGISTER_VAL_END"<< std::endl;
+        std::cout << ""<< std::endl;
       }
-      } 
-      
-    
+    }
 
   
     else if (command.type==command_handler::CommandType::MODIFY_MEMORY) {

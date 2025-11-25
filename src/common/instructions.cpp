@@ -66,6 +66,12 @@ std::unordered_map<std::string, Instruction> instruction_string_map = {
 
     {"ecc_check",Instruction::kecc_check},
 
+    {"add_cache",Instruction::kadd_cache}, //newly added instruction1
+    {"sub_cache",Instruction::ksub_cache}, //newly added instruction2
+    {"mul_cache",Instruction::kmul_cache}, //newly added instruction3
+    {"div_cache",Instruction::kdiv_cache}, //newly added instruction6
+    {"random_flip",Instruction::krandom_flip},//newly added instruction7
+    
     {"sll", Instruction::ksll},
     {"srl", Instruction::ksrl},
     {"sra", Instruction::ksra},
@@ -226,7 +232,7 @@ std::unordered_map<std::string, Instruction> instruction_string_map = {
     {"fmax.bf16", Instruction::kfmax_bf16},
     {"fmadd.bf16", Instruction::kfmadd_bf16},
 
-    // --- NEW FLOAT16 Instructions ---
+    // NEW FLOAT16 Instructions ---
   {"fadd.fp16", Instruction::kfadd_fp16},
   {"fsub.fp16", Instruction::kfsub_fp16},
   {"fmul.fp16", Instruction::kfmul_fp16},
@@ -265,7 +271,9 @@ static const std::unordered_set<std::string> valid_instructions = {
     "add_simd4","sub_simd4","mul_simd4","load_simd4","div_simd4","rem_simd4",
     "add_simd2","sub_simd2","mul_simd2","load_simd2","div_simd2","rem_simd2",
     "add_simdb","sub_simdb","mul_simdb","load_simdb","div_simdb","rem_simdb",
+    "add_cache","sub_cache","mul_cache","div_cache","random_flip", 
     "ecc_check",
+
     "sll", "srl", "sra", "slt", "sltu", //newly added instruction
     "addw", "subw", "sllw", "srlw", "sraw",
     "addi", "xori", "ori", "andi", "slli", "srli", "srai", "slti", "sltiu",
@@ -331,7 +339,8 @@ static const std::unordered_set<std::string> RTypeInstructions = {
     "add_simd4","sub_simd4","mul_simd4","load_simd4","div_simd4","rem_simd4",
     "add_simd2","sub_simd2","mul_simd2","load_simd2","div_simd2","rem_simd2",
     "add_simdb","sub_simdb","mul_simdb","load_simdb","div_simdb","rem_simdb",
-     "ecc_check",
+    "add_cache","sub_cache","mul_cache","div_cache","random_flip", 
+    "ecc_check",
     "sll", "srl", "sra", "slt", "sltu", //newly added 
 
     // RV64
@@ -546,8 +555,15 @@ std::unordered_map<std::string, RTypeInstructionEncoding> R_type_instruction_enc
     {"div_simdb",{0b0110011, 0b101, 0b0111100}},// O_GPR_C_GPR_C_GPR
     {"rem_simdb",{0b0110011, 0b110, 0b0111100}},// O_GPR_C_GPR_C_GPR
 
-    
     {"ecc_check",{0b0110011, 0b111, 0b0111100}}, //O_GPR_C_GPR_C_GPR
+
+
+    {"add_cache",{0b0110011, 0b000, 0b1000000}},// O_GPR_C_GPR_C_GPR
+    {"sub_cache",{0b0110011, 0b001, 0b1000000}},// O_GPR_C_GPR_C_GPR
+    {"mul_cache",{0b0110011, 0b010, 0b1000000}},// O_GPR_C_GPR_C_GPR
+    {"div_cache",{0b0110011, 0b011, 0b1000000}},// O_GPR_C_GPR_C_GPR
+    {"random_flip",{0b0110011, 0b101, 0b1000000}},// O_GPR_C_GPR_C_GPR
+
 
     {"or", {0b0110011, 0b110, 0b0000000}}, // O_GPR_C_GPR_C_GPR
     {"and", {0b0110011, 0b111, 0b0000000}}, // O_GPR_C_GPR_C_GPR
@@ -873,6 +889,13 @@ std::unordered_map<std::string, std::vector<SyntaxType>> instruction_syntax_map 
     {"load_simdb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
     {"div_simdb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
     {"rem_simdb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+
+    
+    {"add_cache", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"sub_cache", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"mul_cache", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"div_cache", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"random_flip", {SyntaxType::O_GPR_C_GPR_C_GPR}},
 
     {"ecc_check",{SyntaxType::O_GPR_C_GPR_C_GPR}},
 

@@ -97,6 +97,11 @@ enum class AluOp {
     kEcc_check,
 
 
+    kAdd_cache, ///<Newly added instruction>///
+    kSub_cache,
+    kMul_cache,
+    kDiv_cache,
+    kRandom_flip,
 
     kSll, ///< Shift left logical operation.
     kSllw, ///< Shift left logical word operation.
@@ -273,6 +278,11 @@ inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
         case AluOp::kEcc_check: os << "kEcc_check";break;
 
 
+        case AluOp::kAdd_cache: os << "kAdd_cache";break;
+        case AluOp::kSub_cache: os << "kSub_cache";break;
+        case AluOp::kMul_cache: os << "kMul_cache";break;
+        case AluOp::kDiv_cache: os << "kDiv_cache";break;
+        case AluOp::kRandom_flip: os << "kRandom_flip";break;
 
         case AluOp::kSll: os << "kSll"; break;
         case AluOp::kSrl: os << "kSrl"; break;
