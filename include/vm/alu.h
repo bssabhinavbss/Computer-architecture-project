@@ -95,7 +95,10 @@ enum class AluOp {
     kRem_simdb,
 
     kEcc_check,
-
+    kEcc_add,
+    kEcc_sub,
+    kEcc_mul,
+    kEcc_div,
 
     kAdd_cache, ///<Newly added instruction>///
     kSub_cache,
@@ -276,7 +279,10 @@ inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
         case AluOp::kRem_simdb: os << "kRem_simdb";break;
 
         case AluOp::kEcc_check: os << "kEcc_check";break;
-
+        case AluOp::kEcc_add: os << "kEcc_add";break;
+        case AluOp::kEcc_sub: os << "kEcc_sub";break;
+        case AluOp::kEcc_mul: os << "kEcc_mul";break;
+        case AluOp::kEcc_div: os << "kEcc_div";break;
 
         case AluOp::kAdd_cache: os << "kAdd_cache";break;
         case AluOp::kSub_cache: os << "kSub_cache";break;

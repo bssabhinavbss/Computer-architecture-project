@@ -65,6 +65,10 @@ std::unordered_map<std::string, Instruction> instruction_string_map = {
     {"div_simdb",Instruction::kdiv_simdb}, //newly added instruction6
 
     {"ecc_check",Instruction::kecc_check},
+    {"ecc_add",Instruction::kecc_add},
+    {"ecc_sub",Instruction::kecc_sub},
+    {"ecc_mul",Instruction::kecc_mul},
+    {"ecc_div",Instruction::kecc_div},
 
     {"add_cache",Instruction::kadd_cache}, //newly added instruction1
     {"sub_cache",Instruction::ksub_cache}, //newly added instruction2
@@ -272,7 +276,7 @@ static const std::unordered_set<std::string> valid_instructions = {
     "add_simd2","sub_simd2","mul_simd2","load_simd2","div_simd2","rem_simd2",
     "add_simdb","sub_simdb","mul_simdb","load_simdb","div_simdb","rem_simdb",
     "add_cache","sub_cache","mul_cache","div_cache","random_flip", 
-    "ecc_check",
+    "ecc_check","ecc_add","ecc_sub","ecc_mul","ecc_div",
 
     "sll", "srl", "sra", "slt", "sltu", //newly added instruction
     "addw", "subw", "sllw", "srlw", "sraw",
@@ -340,7 +344,7 @@ static const std::unordered_set<std::string> RTypeInstructions = {
     "add_simd2","sub_simd2","mul_simd2","load_simd2","div_simd2","rem_simd2",
     "add_simdb","sub_simdb","mul_simdb","load_simdb","div_simdb","rem_simdb",
     "add_cache","sub_cache","mul_cache","div_cache","random_flip", 
-    "ecc_check",
+    "ecc_check","ecc_add","ecc_sub","ecc_mul","ecc_div",
     "sll", "srl", "sra", "slt", "sltu", //newly added 
 
     // RV64
@@ -556,7 +560,10 @@ std::unordered_map<std::string, RTypeInstructionEncoding> R_type_instruction_enc
     {"rem_simdb",{0b0110011, 0b110, 0b0111100}},// O_GPR_C_GPR_C_GPR
 
     {"ecc_check",{0b0110011, 0b111, 0b0111100}}, //O_GPR_C_GPR_C_GPR
-
+    {"ecc_add",{0b0110011, 0b111, 0b1101011}}, //O_GPR_C_GPR_C_GPR
+    {"ecc_sub",{0b0110011, 0b110, 0b1101011}}, //O_GPR_C_GPR_C_GPR
+    {"ecc_mul",{0b0110011, 0b101, 0b1101011}}, //O_GPR_C_GPR_C_GPR
+    {"ecc_div",{0b0110011, 0b100, 0b1101011}}, //O_GPR_C_GPR_C_GPR
 
     {"add_cache",{0b0110011, 0b000, 0b1000000}},// O_GPR_C_GPR_C_GPR
     {"sub_cache",{0b0110011, 0b001, 0b1000000}},// O_GPR_C_GPR_C_GPR
@@ -898,7 +905,10 @@ std::unordered_map<std::string, std::vector<SyntaxType>> instruction_syntax_map 
     {"random_flip", {SyntaxType::O_GPR_C_GPR_C_GPR}},
 
     {"ecc_check",{SyntaxType::O_GPR_C_GPR_C_GPR}},
-
+    {"ecc_add",{SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"ecc_sub",{SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"ecc_mul",{SyntaxType::O_GPR_C_GPR_C_GPR}},
+    {"ecc_div",{SyntaxType::O_GPR_C_GPR_C_GPR}},
     {"or", {SyntaxType::O_GPR_C_GPR_C_GPR}},
     {"and", {SyntaxType::O_GPR_C_GPR_C_GPR}},
     {"sll", {SyntaxType::O_GPR_C_GPR_C_GPR}},

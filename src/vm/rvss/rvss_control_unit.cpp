@@ -359,6 +359,10 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 return alu::AluOp::kDiv;
                 break;
             }
+            case 0b1101011:{
+                return alu::AluOp::kEcc_div;
+                break;
+            }
             }
             break;
         }
@@ -409,6 +413,10 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 return alu::AluOp::kRandom_flip;
                 break;
             }
+            case 0b1101011:{
+                return alu::AluOp::kEcc_mul;
+                break;
+            }
             }
             break;
         }
@@ -455,6 +463,10 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 return alu::AluOp::kRem_simdb;
                 break;
             }
+            case 0b1101011:{
+                return alu::AluOp::kEcc_sub;
+                break;
+            }
             }
             break;
         }
@@ -479,6 +491,10 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
             }
             case 0b0111100: {// kRemuw
                 return alu::AluOp::kEcc_check;
+                break;
+            }
+            case 0b1101011:{
+                return alu::AluOp::kEcc_add;
                 break;
             }
             }
@@ -641,6 +657,7 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
         }
         break;
     }
+    
     case 0b0111011: {// R4-Type
         switch (funct3) {
         case 0b000: {// kAddw, kSubw, kMulw

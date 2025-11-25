@@ -26,6 +26,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## building for mac.os
 - mkdir build
 - cd build
-- CXX=/opt/homebrew/bin/g++-14 CC=/opt/homebrew/bin/gcc-14
-- cmake ..
+- cmake -DCMAKE_C_COMPILER=/opt/homebrew/bin/gcc-14 \
+      -DCMAKE_CXX_COMPILER=/opt/homebrew/bin/g++-14 \
+      ..
 - make -j4

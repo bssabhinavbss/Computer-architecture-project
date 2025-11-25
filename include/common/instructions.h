@@ -276,6 +276,10 @@ enum Instruction {
 
   
   kecc_check,
+  kecc_add,
+  kecc_sub,
+  kecc_mul,
+  kecc_div,
 
 
   // === QALU Quantum-Tagged Instructions ===
@@ -383,7 +387,11 @@ inline constexpr std::array<InstructionEncoding, static_cast<size_t>(Instruction
   InstructionEncoding(Instruction::kdiv_cache, 0b0110011, -1, 0b011, -1 ,-1, 0b1000000), //kload_simd8-opcodes to be balanced
   InstructionEncoding(Instruction::krandom_flip, 0b0110011, -1, 0b101, -1 ,-1, 0b1000000), //kdiv_simd8-opcodes to be balanced
   
-  InstructionEncoding(Instruction::kecc_check, 0b0110011, -1, 0b111, -1 ,-1, 0b0111100), //krem_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::kecc_check, 0b0110011, -1, 0b111, -1 ,-1, 0b1101011), //krem_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::kecc_add, 0b0110011, -1, 0b111, -1 ,-1, 0b1101011), //krem_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::kecc_sub, 0b0110011, -1, 0b110, -1 ,-1, 0b1101011), //krem_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::kecc_mul, 0b0110011, -1, 0b101, -1 ,-1, 0b1101011), //krem_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::kecc_div, 0b0110011, -1, 0b100, -1 ,-1, 0b1101011), //krem_simd8-opcodes to be balanced
 
   //krem_simd8-opcodes to be balanced
   

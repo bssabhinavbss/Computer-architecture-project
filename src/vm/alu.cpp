@@ -643,6 +643,47 @@ static std::string decode_fclass(uint16_t res) {
     return {decoded, false};
     
     }
+    case AluOp::kEcc_add:{
+      bool corrected = false, uncorrectable = false;
+      uint64_t decoded1 = hamming64_57_decode(a, &corrected, &uncorrectable);
+      corrected = false, uncorrectable = false;
+      uint64_t decoded2 = hamming64_57_decode(b, &corrected, &uncorrectable);
+
+    uint64_t sum = decoded1 + decoded2;
+     uint64_t final = hamming64_57_encode(sum);
+     return{final, false};
+    }
+    case AluOp::kEcc_sub:{
+      bool corrected = false, uncorrectable = false;
+      uint64_t decoded1 = hamming64_57_decode(a, &corrected, &uncorrectable);
+       corrected = false, uncorrectable = false;
+      uint64_t decoded2 = hamming64_57_decode(b, &corrected, &uncorrectable);
+
+      uint64_t sum = decoded1 - decoded2;
+     uint64_t final = hamming64_57_encode(sum);
+     return{final, false};
+    }
+    case AluOp::kEcc_mul:{
+      bool corrected = false, uncorrectable = false;
+      uint64_t decoded1 = hamming64_57_decode(a, &corrected, &uncorrectable);
+       corrected = false, uncorrectable = false;
+      uint64_t decoded2 = hamming64_57_decode(b, &corrected, &uncorrectable);
+
+      uint64_t sum = decoded1 * decoded2;
+     uint64_t final = hamming64_57_encode(sum);
+     return{final, false};
+    }
+    case AluOp::kEcc_div:{
+      bool corrected = false, uncorrectable = false;
+      uint64_t decoded1 = hamming64_57_decode(a, &corrected, &uncorrectable);
+       corrected = false, uncorrectable = false;
+      uint64_t decoded2 = hamming64_57_decode(b, &corrected, &uncorrectable);
+
+      uint64_t sum = decoded1 / decoded2;
+     uint64_t final = hamming64_57_encode(sum);
+     return{final, false};
+    }
+
     case AluOp::kAdd: {
       auto sa = static_cast<int64_t>(a);
       auto sb = static_cast<int64_t>(b);
