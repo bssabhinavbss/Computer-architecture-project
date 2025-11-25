@@ -1334,6 +1334,133 @@ static std::string decode_fclass(uint16_t res) {
      
     }
 
+    case AluOp::kAdd_cache: {
+      static int64_t prev_a = 0;
+      static int64_t prev_b = 0;
+      static int64_t prev_result = 0;
+      static bool cache_valid = false;
+      if (cache_valid && 
+          ((a == prev_a && b == prev_b) || (a == prev_b && b == prev_a))) {
+          return {prev_result, false};
+      }
+      int32_t sa_upper = static_cast<int32_t>(a >> 32);
+      int32_t sa_lower = static_cast<int32_t>(a & 0xFFFFFFFFLL);
+      int32_t sb_upper = static_cast<int32_t>(b >> 32);
+      int32_t sb_lower = static_cast<int32_t>(b & 0xFFFFFFFFLL);
+      int64_t sr_upper_val = static_cast<int64_t>(sa_upper) + static_cast<int64_t>(sb_upper);
+      int64_t sr_lower_val = static_cast<int64_t>(sa_lower) + static_cast<int64_t>(sb_lower);
+      int64_t sr_upper = static_cast<int64_t>(static_cast<int32_t>(sr_upper_val));
+      int64_t sr_lower = static_cast<int64_t>(static_cast<int32_t>(sr_lower_val));
+      int64_t sr = (sr_upper << 32) | (sr_lower & 0xFFFFFFFFLL);
+      prev_a = a;
+      prev_b = b;
+      prev_result = sr;
+      cache_valid = true;
+
+      return {sr, false};
+    }
+    case AluOp::kSub_cache: {
+      static int64_t prev_a = 0;
+      static int64_t prev_b = 0;
+      static int64_t prev_result = 0;
+      static bool cache_valid = false;
+      if (cache_valid && (a == prev_a && b == prev_b)) {
+          return {prev_result, false};
+      }
+      int32_t sa_upper = static_cast<int32_t>(a >> 32);
+      int32_t sa_lower = static_cast<int32_t>(a & 0xFFFFFFFFLL);
+      int32_t sb_upper = static_cast<int32_t>(b >> 32);
+      int32_t sb_lower = static_cast<int32_t>(b & 0xFFFFFFFFLL);
+
+      int64_t sr_upper_val = static_cast<int64_t>(sa_upper) - static_cast<int64_t>(sb_upper);
+      int64_t sr_lower_val = static_cast<int64_t>(sa_lower) - static_cast<int64_t>(sb_lower);
+      
+
+      int64_t sr_upper = static_cast<int64_t>(static_cast<int32_t>(sr_upper_val));
+      int64_t sr_lower = static_cast<int64_t>(static_cast<int32_t>(sr_lower_val));
+      int64_t sr = (sr_upper << 32) | (sr_lower & 0xFFFFFFFFLL);
+
+
+      prev_a = a;
+      prev_b = b;
+      prev_result = sr;
+      cache_valid = true;
+
+      return {sr, false};
+    }
+    case AluOp::kMul_cache: {
+      static int64_t prev_a = 0;
+      static int64_t prev_b = 0;
+      static int64_t prev_result = 0;
+      static bool cache_valid = false;
+
+      // Check cache (commutative property: a*b == b*a)
+      if (cache_valid && 
+          ((a == prev_a && b == prev_b) || (a == prev_b && b == prev_a))) {
+          return {prev_result, false};
+      }
+
+      int32_t sa_upper = static_cast<int32_t>(a >> 32);
+      int32_t sa_lower = static_cast<int32_t>(a & 0xFFFFFFFFLL);
+      int32_t sb_upper = static_cast<int32_t>(b >> 32);
+      int32_t sb_lower = static_cast<int32_t>(b & 0xFFFFFFFFLL);
+      int64_t sr_upper_val = static_cast<int64_t>(sa_upper) * static_cast<int64_t>(sb_upper);
+      int64_t sr_lower_val = static_cast<int64_t>(sa_lower) * static_cast<int64_t>(sb_lower);
+      int64_t sr_upper = static_cast<int64_t>(static_cast<int32_t>(sr_upper_val));
+      int64_t sr_lower = static_cast<int64_t>(static_cast<int32_t>(sr_lower_val));
+      int64_t sr = (sr_upper << 32) | (sr_lower & 0xFFFFFFFFLL);
+      prev_a = a;
+      prev_b = b;
+      prev_result = sr;
+      cache_valid = true;
+
+      return {sr, false};
+    }
+    case AluOp::kDiv_cache: {
+      static int64_t prev_a = 0;
+      static int64_t prev_b = 0;
+      static int64_t prev_result = 0;
+      static bool cache_valid = false;
+      if (cache_valid && (a == prev_a && b == prev_b)) {
+          return {prev_result, false};
+      }
+      int32_t sa_upper = static_cast<int32_t>(a >> 32);
+      int32_t sa_lower = static_cast<int32_t>(a & 0xFFFFFFFFLL);
+      int32_t sb_upper = static_cast<int32_t>(b >> 32);
+      int32_t sb_lower = static_cast<int32_t>(b & 0xFFFFFFFFLL);
+      int64_t sr_upper_val, sr_lower_val;
+
+      if (sb_upper == 0) {
+          sr_upper_val = 0; 
+      } else {
+          sr_upper_val = static_cast<int64_t>(sa_upper) / static_cast<int64_t>(sb_upper);
+      }
+      
+      if (sb_lower == 0) {
+         
+          sr_lower_val = 0; 
+      } else {
+          sr_lower_val = static_cast<int64_t>(sa_lower) / static_cast<int64_t>(sb_lower);
+      }
+      int64_t sr_upper = static_cast<int64_t>(static_cast<int32_t>(sr_upper_val));
+      int64_t sr_lower = static_cast<int64_t>(static_cast<int32_t>(sr_lower_val));
+      int64_t sr = (sr_upper << 32) | (sr_lower & 0xFFFFFFFFLL);
+      prev_a = a;
+      prev_b = b;
+      prev_result = sr;
+      cache_valid = true;
+
+      return {sr, false};
+    }
+    case AluOp::kRandom_flip: {
+      int64_t val = a;
+      int bit_pos = rand() % 64;  
+      int64_t flip_mask = 1LL << bit_pos;
+      int64_t result = val ^ flip_mask;
+      return {result, false};
+    }
+
+  
     case AluOp::kSll: {
       uint64_t result = a << (b & 63);
       return {result, false};

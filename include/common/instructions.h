@@ -244,6 +244,12 @@ enum Instruction {
   krem_simdb, //newly added instruction3
   kdiv_simdb, //newly added instruction3
 
+  // Cache and random flip functions
+  kadd_cache,
+  ksub_cache,
+  kmul_cache,
+  kdiv_cache,
+  krandom_flip,
    // BFloat16 Instructions
  kfadd_bf16,
  kfsub_bf16,
@@ -357,28 +363,16 @@ inline constexpr std::array<InstructionEncoding, static_cast<size_t>(Instruction
   InstructionEncoding(Instruction::kdiv_simdb, 0b0110011, -1, 0b101, -1 ,-1, 0b0111100), //kdiv_simd8-opcodes to be balanced
   InstructionEncoding(Instruction::krem_simdb, 0b0110011, -1, 0b110, -1 ,-1, 0b0111100), //krem_simd8-opcodes to be balanced
   
+
+  InstructionEncoding(Instruction::kadd_cache, 0b0110011, -1, 0b000, -1 ,-1, 0b1000000), //kadd_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::ksub_cache, 0b0110011, -1, 0b001, -1 ,-1, 0b1000000), //ksub_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::kmul_cache, 0b0110011, -1, 0b010, -1 ,-1, 0b1000000), //kmul_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::kdiv_cache, 0b0110011, -1, 0b011, -1 ,-1, 0b1000000), //kload_simd8-opcodes to be balanced
+  InstructionEncoding(Instruction::krandom_flip, 0b0110011, -1, 0b101, -1 ,-1, 0b1000000), //kdiv_simd8-opcodes to be balanced
+  
   InstructionEncoding(Instruction::kecc_check, 0b0110011, -1, 0b111, -1 ,-1, 0b0111100), //krem_simd8-opcodes to be balanced
 
-  InstructionEncoding(Instruction::kadd_simd4, 0b0110011, -1, 0b000, -1 ,-1, 0b1111111), //kadd_simd8-opcodes to be balanced
-  InstructionEncoding(Instruction::ksub_simd4, 0b0110011, -1, 0b001, -1 ,-1, 0b1111111), //ksub_simd8-opcodes to be balanced
-  InstructionEncoding(Instruction::kmul_simd4, 0b0110011, -1, 0b010, -1 ,-1, 0b1111111), //kmul_simd8-opcodes to be balanced
-  InstructionEncoding(Instruction::kload_simd4, 0b0110011, -1, 0b011, -1 ,-1, 0b1111111), //kload_simd8-opcodes to be balanced
-  InstructionEncoding(Instruction::kdiv_simd4, 0b0110011, -1, 0b101, -1 ,-1, 0b1111111), //kdiv_simd8-opcodes to be balanced
-  InstructionEncoding(Instruction::krem_simd4, 0b0110011, -1, 0b110, -1 ,-1, 0b1111111), //krem_simd8-opcodes to be balanced
-  
-  InstructionEncoding(Instruction::kadd_simd2, 0b0110011, -1, 0b000, -1 ,-1, 0b0111110), //kadd_simd8-opcodes to be balanced
-  InstructionEncoding(Instruction::ksub_simd2, 0b0110011, -1, 0b001, -1 ,-1, 0b0111110), //ksub_simd8-opcodes to be balanced
-  InstructionEncoding(Instruction::kmul_simd2, 0b0110011, -1, 0b010, -1 ,-1, 0b0111110), //kmul_simd8-opcodes to be balanced
-  InstructionEncoding(Instruction::kload_simd2, 0b0110011, -1, 0b011, -1 ,-1, 0b0111110), //kload_simd8-opcodes to be balanced
-  InstructionEncoding(Instruction::kdiv_simd2, 0b0110011, -1, 0b101, -1 ,-1, 0b0111110), //kdiv_simd8-opcodes to be balanced
-  InstructionEncoding(Instruction::krem_simd2, 0b0110011, -1, 0b110, -1 ,-1, 0b0111110), //krem_simd8-opcodes to be balanced
-  
-  InstructionEncoding(Instruction::kadd_simdb, 0b0110011, -1, 0b000, -1 ,-1, 0b0111100), //kadd_simd8-opcodes to be balanced
-  InstructionEncoding(Instruction::ksub_simdb, 0b0110011, -1, 0b001, -1 ,-1, 0b0111100), //ksub_simd8-opcodes to be balanced
-  InstructionEncoding(Instruction::kmul_simdb, 0b0110011, -1, 0b010, -1 ,-1, 0b0111100), //kmul_simd8-opcodes to be balanced
-  InstructionEncoding(Instruction::kload_simdb, 0b0110011, -1, 0b011, -1 ,-1, 0b0111100), //kload_simd8-opcodes to be balanced
-  InstructionEncoding(Instruction::kdiv_simdb, 0b0110011, -1, 0b101, -1 ,-1, 0b0111100), //kdiv_simd8-opcodes to be balanced
-  InstructionEncoding(Instruction::krem_simdb, 0b0110011, -1, 0b110, -1 ,-1, 0b0111100), //krem_simd8-opcodes to be balanced
+  //krem_simd8-opcodes to be balanced
   
   InstructionEncoding(Instruction::kmul,        0b0110011, -1, 0b000, -1, -1, 0b0000001), // kmul
   InstructionEncoding(Instruction::kmulh,       0b0110011, -1, 0b001, -1, -1, 0b0000001), // kmulh

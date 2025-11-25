@@ -23,6 +23,7 @@ void RVSSControlUnit::SetControlSignals(uint32_t instruction) {
   alu_op_ = false;
 
   switch (opcode) {
+
     case 0b0110011: /* R-type (kAdd, kSub, kAnd, kOr, kXor, kSll, kSrl, etc.) */ {
       reg_write_ = true;
       alu_op_ = true;
@@ -146,8 +147,7 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
     switch (opcode)
     {
     case 0b0110011: {// R-Type
-        switch (funct3)
-        {
+        switch (funct3){
         case 0b000:{ // kAdd, kSub, kMul
             switch (funct7)
             {
@@ -188,6 +188,10 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 return alu::AluOp::kAdd_simdb;
                 break;
             }
+            case 0b1000000:{
+                return alu::AluOp::kAdd_cache;
+                break;
+            }
             }
             break;
         }
@@ -224,6 +228,10 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
             }
             case 0b0111100:{
                 return alu::AluOp::kSub_simdb;
+                break;
+            }
+            case 0b1000000:{
+                return alu::AluOp::kSub_cache;
                 break;
             }
             }
@@ -264,9 +272,14 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
                 return alu::AluOp::kMul_simdb;
                 break;
             }
+            case 0b1000000:{
+                return alu::AluOp::kMul_cache;
+                break;
+            }
+            }
             }
             break;
-        }
+        
         case 0b011: {// kSltu, kMulhu
             switch (funct7)
             {
@@ -300,6 +313,10 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
             }
             case 0b0111100:{
                 return alu::AluOp::kLoad_simdb;
+                break;
+            }
+            case 0b1000000:{
+                return alu::AluOp::kDiv_cache;
                 break;
             }
             }
@@ -356,6 +373,10 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
             }
             case 0b0111100:{
                 return alu::AluOp::kDiv_simdb;
+                break;
+            }
+            case 0b1000000:{
+                return alu::AluOp::kRandom_flip;
                 break;
             }
             }
@@ -417,9 +438,12 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
             }
             break;
         }
-        }
-        break;
+    
+       
     }
+     break;
+ }
+
     case 0b0010011: {// I-Type
         switch (funct3)
         {
@@ -468,6 +492,7 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
         }
         break;
     }
+
     case 0b1100011: {// B-Type
         switch (funct3)
         {
@@ -496,8 +521,10 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
             break;
         }
         }
+
         break;
     }
+
     case 0b0000011: {// Load
         return alu::AluOp::kAdd;
         break;
