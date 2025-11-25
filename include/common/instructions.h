@@ -277,6 +277,19 @@ enum Instruction {
   
   kecc_check,
 
+
+  // === QALU Quantum-Tagged Instructions ===
+  kqalloc_a,
+  kqalloc_b,
+  kqha,
+  kqhb,
+  kqxa,
+  kqxb,
+  kqphase,
+  kqmeas,
+  kqnorma,
+  kqnormb,
+
   INVALID,
 
   COUNT // sentinel for length
@@ -569,6 +582,18 @@ inline constexpr std::array<InstructionEncoding, static_cast<size_t>(Instruction
   InstructionEncoding(Instruction::kfmadd_msfp16, 0b0001011, 0b00, -1, -1, -1, -1), // fmadd.msfp16 (custom)
 
 
+  // === Quantum ALU Instructions (custom-0 opcode 0b0001010) ===
+  InstructionEncoding(Instruction::kqalloc_a,  0b0110011, -1, 0b000, -1, -1, 0b0101010), // QALLOC.A
+  InstructionEncoding(Instruction::kqalloc_b,  0b0110011, -1, 0b001, -1, -1, 0b0101010), // QALLOC.B
+  InstructionEncoding(Instruction::kqha,       0b0110011, -1, 0b010, -1, -1, 0b0101010), // QHA
+  InstructionEncoding(Instruction::kqhb,       0b0110011, -1, 0b011, -1, -1, 0b0101010), // QHB
+  InstructionEncoding(Instruction::kqxa,       0b0110011, -1, 0b100, -1, -1, 0b0101010), // QXA
+  InstructionEncoding(Instruction::kqxb,       0b0110011, -1, 0b101, -1, -1, 0b0101010), // QXB
+  InstructionEncoding(Instruction::kqphase,    0b0110011, -1, 0b110, -1, -1, 0b0101010), // QPHASE
+  InstructionEncoding(Instruction::kqmeas,     0b0110011, -1, 0b111, -1, -1, 0b0101010), // QMEAS
+  InstructionEncoding(Instruction::kqnorma,    0b0110011, -1, 0b111, -1, -1, 0b0101011), // QNORMA
+  InstructionEncoding(Instruction::kqnormb,    0b0110011, -1, 0b110, -1, -1, 0b0101011), // QNORMB
+  // ==========================================================
 }};
 
 const std::array<InstructionEncoding, static_cast<size_t>(Instruction::COUNT)> runtime_instruction_encoding_array = compiletime_instruction_encoding_array;

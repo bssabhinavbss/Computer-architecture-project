@@ -247,6 +247,19 @@ std::unordered_map<std::string, Instruction> instruction_string_map = {
   {"fmax.msfp16", Instruction::kfmax_msfp16},
   {"fmadd.msfp16", Instruction::kfmadd_msfp16},
 
+  // === QALU Quantum-Tagged Instructions ===
+  {"qalloc.a", Instruction::kqalloc_a},
+  {"qalloc.b", Instruction::kqalloc_b},
+  {"qha", Instruction::kqha},
+  {"qhb", Instruction::kqhb},
+  {"qxa", Instruction::kqxa},
+  {"qxb", Instruction::kqxb},
+  {"qphase", Instruction::kqphase},
+  {"qmeas", Instruction::kqmeas},
+  {"qnorma", Instruction::kqnorma},
+  {"qnormb", Instruction::kqnormb},
+  // ======================================
+
 };
 
 
@@ -311,6 +324,10 @@ static const std::unordered_set<std::string> valid_instructions = {
     // MSFP16
     "fadd.msfp16", "fsub.msfp16", "fmul.msfp16", "fmax.msfp16", "fmadd.msfp16",
 
+    // === QALU Quantum-Tagged Instructions ===
+  "qalloc.a", "qalloc.b", "qha", "qhb", "qxa", "qxb", "qphase", "qmeas", "qnorma", "qnormb",
+  // ======================================
+
 };
 
 static const std::unordered_set<std::string> RTypeInstructions = {
@@ -334,6 +351,9 @@ static const std::unordered_set<std::string> RTypeInstructions = {
 
     // M Extension RV64
     "mulw", "divw", "divuw", "remw", "remuw",
+    // === QALU Quantum-Tagged Instructions ===
+  "qalloc.a", "qalloc.b", "qha", "qhb", "qxa", "qxb", "qphase", "qmeas", "qnorma", "qnormb",
+  // ======================================
 
 };
 
@@ -574,6 +594,21 @@ std::unordered_map<std::string, RTypeInstructionEncoding> R_type_instruction_enc
     {"divuw", {0b0111011, 0b101, 0b0000001}}, // O_GPR_C_GPR_C_GPR
     {"remw", {0b0111011, 0b110, 0b0000001}}, // O_GPR_C_GPR_C_GPR
     {"remuw", {0b0111011, 0b111, 0b0000001}}, // O_GPR_C_GPR_C_GPR
+
+
+  // === QALU Quantum-Tagged Instructions ===
+  {"qalloc.a", {0b0110011, 0b000, 0b0101010}}, // O_GPR_C_GPR_C_GPR
+  {"qalloc.b", {0b0110011, 0b001, 0b0101010}}, // O_GPR_C_GPR_C_GPR
+  {"qha",      {0b0110011, 0b010, 0b0101010}}, // O_GPR_C_GPR_C_GPR
+  {"qhb",      {0b0110011, 0b011, 0b0101010}}, // O_GPR_C_GPR_C_GPR
+  {"qxa",      {0b0110011, 0b100, 0b0101010}}, // O_GPR_C_GPR_C_GPR
+  {"qxb",      {0b0110011, 0b101, 0b0101010}}, // O_GPR_C_GPR_C_GPR
+  {"qphase",   {0b0110011, 0b110, 0b0101010}}, // O_GPR_C_GPR_C_GPR
+  {"qmeas",    {0b0110011, 0b111, 0b0101010}}, // O_GPR_C_GPR_C_GPR
+  {"qnorma",   {0b0110011, 0b111, 0b0101011}}, // O_GPR_C_GPR_C_GPR
+  {"qnormb",   {0b0110011, 0b110, 0b0101011}}, // O_GPR_C_GPR_C_GPR
+  // =========================================
+
 
 };
 
@@ -1082,6 +1117,20 @@ std::unordered_map<std::string, std::vector<SyntaxType>> instruction_syntax_map 
   {"fmul.msfp16", {SyntaxType::O_FPR_C_FPR_C_FPR}},
   {"fmax.msfp16", {SyntaxType::O_FPR_C_FPR_C_FPR}},
   {"fmadd.msfp16", {SyntaxType::O_FPR_C_FPR_C_FPR_C_FPR}},
+
+  
+// === QALU Quantum-Tagged Instructions ===
+  {"qalloc.a", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+  {"qalloc.b", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+  {"qha", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+  {"qhb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+  {"qxa", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+  {"qxb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+  {"qphase", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+  {"qmeas", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+  {"qnorma", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+  {"qnormb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
+  // ======================================
 };
 
 bool isValidInstruction(const std::string &instruction) {

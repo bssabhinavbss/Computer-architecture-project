@@ -15,15 +15,20 @@
 #include <array>
 #include <climits>   // for INT_MIN, INT_MAX
 // #include <cmath>     // for frexp, ldexp, fabs, lrintf
+#include <cstdlib>   // For std::rand(), RAND_MAX, std::srand
+#include <algorithm> // For std::max(), std::min()
+#include <limits>    // For std::numeric_limits
+#include <ctime>     // For std::time (to seed rand)
+
+// ...
 
 
 namespace alu {
 
 
-  #include <cstdint>
-#include <cfenv>
-#include <cmath>
-#include <cstring>   // memcpy
+// Seed the random number generator once when the program loads
+static bool seeded = [](){ std::srand(std::time(nullptr)); return true; }();
+
 
 // Safe bit-casts (no aliasing UB)
 static inline uint32_t f32_to_bits(float f) {
@@ -334,6 +339,272 @@ float bfloat16_to_float(uint16_t b) {
     un.u = (uint32_t)b << 16;
     return un.f;
 }
+
+// === BEGIN QALU HELPER FUNCTIONS ===
+
+// Constants for 30-bit signed fixed-point (Q1.29)
+static constexpr int64_t QALU_SCALE = 1LL << 29;
+static constexpr double QALU_SCALE_INV = 1.0 / (double)QALU_SCALE;
+static constexpr int64_t QALU_MASK = 0x3FFFFFFFLL; // 30 bits
+static constexpr int64_t QALU_MAX_VAL = (1LL << 29) - 1;
+static constexpr int64_t QALU_MIN_VAL = -(1LL << 29);
+static constexpr double SQRT_2_INV = 0.7071067811865476; // 1/sqrt(2)
+
+/**
+ * @brief Converts a 30-bit signed fixed-point value to a double.
+ */
+static double fixed_to_double(int64_t fixed) {
+    // Sign-extend the 30-bit value to 64 bits
+    if (fixed & (1LL << 29)) {
+        fixed |= ~QALU_MASK;
+    }
+    return (double)fixed * QALU_SCALE_INV;
+}
+
+/**
+ * @brief Converts a double to a 30-bit signed fixed-point, with saturation.
+ */
+static int64_t double_to_fixed(double d) {
+    double scaled = d * QALU_SCALE;
+
+    // --- REPLACED CODE ---
+    // Manually clamp/saturate the value to the Q1.29 range
+    // This removes the dependency on std::max/min AND fixes the 1.0 bug
+    if (scaled > (double)QALU_MAX_VAL) {
+        scaled = (double)QALU_MAX_VAL;
+    } else if (scaled < (double)QALU_MIN_VAL) {
+        scaled = (double)QALU_MIN_VAL;
+    }
+    // --- END REPLACED CODE ---
+
+    return (int64_t)std::round(scaled);
+}
+/**
+ * @brief Extracts the 4-bit tag from a QALU register.
+ */
+static uint8_t get_tag(uint64_t reg_val) {
+    return (uint8_t)((reg_val >> 60) & 0xF);
+}
+
+/**
+ * @brief Extracts and converts the 30-bit real part of a QALU register.
+ */
+static double get_real(uint64_t reg_val) {
+    int64_t fixed = (reg_val >> 30) & QALU_MASK;
+    return fixed_to_double(fixed);
+}
+
+/**
+ * @brief Extracts and converts the 30-bit imaginary part of a QALU register.
+ */
+static double get_imag(uint64_t reg_val) {
+    int64_t fixed = reg_val & QALU_MASK;
+    return fixed_to_double(fixed);
+}
+
+/**
+ * @brief Packs a tag, real, and imaginary part into a 64-bit QALU register.
+ */
+static uint64_t pack_amplitude(uint8_t tag, double real, double imag) {
+    int64_t fixed_r = double_to_fixed(real);
+    int64_t fixed_i = double_to_fixed(imag);
+    
+    uint64_t tag_bits = ((uint64_t)tag & 0xF) << 60;
+    uint64_t real_bits = ((uint64_t)fixed_r & QALU_MASK) << 30;
+    uint64_t imag_bits = ((uint64_t)fixed_i & QALU_MASK);
+    
+    return tag_bits | real_bits | imag_bits;
+}
+
+/**
+ * @brief Calculates the squared norm |a|^2 of a complex number.
+ */
+static double get_norm_squared(double real, double imag) {
+    return real * real + imag * imag;
+}
+
+/**
+ * @brief Applies simple random noise to a double value.
+ * Used for tag-based logic.
+ */
+static double apply_noise(double val) {
+    // Simple noise: add a random value between -0.01 and +0.01
+    // (This is a placeholder, you can make the noise model more complex)
+    double noise = ((double)std::rand() / (double)RAND_MAX) * 0.02 - 0.01;
+    return val + noise;
+}
+
+// === END QALU HELPER FUNCTIONS ===
+
+
+// === BEGIN QALU INSTRUCTION IMPLEMENTATIONS ===
+
+// Note: 'a' is rs1_val (alpha), 'b' is rs2_val (beta) unless specified
+static uint64_t qalloc_a(uint64_t rs1, uint64_t rs2) {
+    uint8_t tag = (rs2 != 0) ? get_tag(rs2) : get_tag(rs1);
+    double real = get_real(rs1);
+    double imag = get_imag(rs1);
+    return pack_amplitude(tag, real, imag);
+}
+
+static uint64_t qalloc_b(uint64_t rs1, uint64_t rs2) {
+    uint8_t tag = (rs2 != 0) ? get_tag(rs2) : get_tag(rs1);
+    double real = get_real(rs1);
+    double imag = get_imag(rs1);
+    return pack_amplitude(tag, real, imag);
+}
+
+
+/**
+ * @brief QHA: Calculates alpha' = (alpha + beta) / sqrt(2).
+ */
+static uint64_t qha(uint64_t a, uint64_t b) {
+    uint8_t tag = get_tag(a); // Propagate tag from alpha
+    double ar = get_real(a); double ai = get_imag(a);
+    double br = get_real(b); double bi = get_imag(b);
+
+    double res_r = (ar + br) * SQRT_2_INV;
+    double res_i = (ai + bi) * SQRT_2_INV;
+
+    // --- Tag-Based Logic Implementation ---
+    if (tag == 0x1) { // Example: Tag 1 means "apply noise"
+        res_r = apply_noise(res_r);
+        res_i = apply_noise(res_i);
+    }
+    // else if (tag == 0x2) { // Example: Tag 2 means "lower precision"
+    //    res_r = (double)double_to_fixed_16bit(res_r); 
+    // }
+    // --- End Tag-Based Logic ---
+
+    return pack_amplitude(tag, res_r, res_i);
+}
+
+/**
+ * @brief QHB: Calculates beta' = (alpha - beta) / sqrt(2).
+ */
+static uint64_t qhb(uint64_t a, uint64_t b) {
+    uint8_t tag = get_tag(a); // Propagate tag from alpha
+    double ar = get_real(a); double ai = get_imag(a);
+    double br = get_real(b); double bi = get_imag(b);
+
+    double res_r = (ar - br) * SQRT_2_INV;
+    double res_i = (ai - bi) * SQRT_2_INV;
+    
+    // --- Tag-Based Logic Implementation ---
+    if (tag == 0x1) { // Example: Tag 1 means "apply noise"
+        res_r = apply_noise(res_r);
+        res_i = apply_noise(res_i);
+    }
+    // --- End Tag-Based Logic ---
+
+    return pack_amplitude(tag, res_r, res_i);
+}
+
+/**
+ * @brief QPHASE: Calculates beta' = beta * e^(i*theta).
+ * rs1 (a) holds beta. rs2 (b) holds the angle theta as a Q1.29 value.
+ */
+static uint64_t qphase(uint64_t a, uint64_t b) {
+    uint8_t tag = get_tag(a);
+    double br = get_real(a); double bi = get_imag(a);
+
+    // Assume theta is stored in the 'imag' part of rs2 (b) as a Q1.29 value
+    double theta = get_imag(b); 
+    
+    double cos_t = std::cos(theta);
+    double sin_t = std::sin(theta);
+
+    // Complex multiplication: (br + i*bi) * (cos_t + i*sin_t)
+    double res_r = br * cos_t - bi * sin_t;
+    double res_i = br * sin_t + bi * cos_t;
+    
+    // --- Tag-Based Logic Implementation ---
+    if (tag == 0x1) { // Example: Tag 1 means "apply noise"
+        res_r = apply_noise(res_r);
+        res_i = apply_noise(res_i);
+    }
+    // --- End Tag-Based Logic ---
+
+    return pack_amplitude(tag, res_r, res_i);
+}
+
+/**
+ * @brief QXA: Calculates alpha' = beta.
+ */
+static uint64_t qxa(uint64_t a, uint64_t b) {
+    return b; // Pass-through
+}
+
+/**
+ * @brief QXB: Calculates beta' = alpha.
+ */
+static uint64_t qxb(uint64_t a, uint64_t b) {
+    return a; // Pass-through
+}
+
+
+/**
+ * @brief QMEAS: Measures the state (a, b) and returns a classical 0 or 1.
+ */
+static uint64_t qmeas(uint64_t a, uint64_t b) {
+    double ar = get_real(a); double ai = get_imag(a);
+    double br = get_real(b); double bi = get_imag(b);
+
+    double p0 = get_norm_squared(ar, ai); // |alpha|^2
+    double p1 = get_norm_squared(br, bi); // |beta|^2
+    
+    double total_p = p0 + p1;
+    if (total_p < 1e-9) { // Avoid division by zero if state is (0,0)
+        return 0;
+    }
+
+    // Get a random double between 0.0 and 1.0
+    double rand_val = (double)std::rand() / (double)RAND_MAX;
+
+    if (rand_val < (p0 / total_p)) {
+        return 0; // Collapsed to |0>
+    } else {
+        return 1; // Collapsed to |1>
+    }
+}
+
+/**
+ * @brief QNORMA: Calculates alpha' = alpha / N.
+ */
+static uint64_t qnorma(uint64_t a, uint64_t b) {
+    uint8_t tag = get_tag(a);
+    double ar = get_real(a); double ai = get_imag(a);
+    double br = get_real(b); double bi = get_imag(b);
+
+    double norm_sq = get_norm_squared(ar, ai) + get_norm_squared(br, bi);
+    
+    if (norm_sq < 1e-9) { // Avoid division by zero
+        return a; // Return original alpha
+    }
+    
+    double norm = std::sqrt(norm_sq);
+    return pack_amplitude(tag, ar / norm, ai / norm);
+}
+
+/**
+ * @brief QNORMB: Calculates beta' = beta / N.
+ */
+static uint64_t qnormb(uint64_t a, uint64_t b) {
+    uint8_t tag = get_tag(b); // Propagate tag from beta
+    double ar = get_real(a); double ai = get_imag(a);
+    double br = get_real(b); double bi = get_imag(b);
+
+    double norm_sq = get_norm_squared(ar, ai) + get_norm_squared(br, bi);
+    
+    if (norm_sq < 1e-9) { // Avoid division by zero
+        return b; // Return original beta
+    }
+    
+    double norm = std::sqrt(norm_sq);
+    return pack_amplitude(tag, br / norm, bi / norm);
+}
+
+// === END QALU INSTRUCTION IMPLEMENTATIONS ===
 
 
 
@@ -1497,6 +1768,29 @@ static std::string decode_fclass(uint16_t res) {
     case AluOp::kSltu: {
       return {static_cast<uint64_t>(a < b), false};
     }
+    // === BEGIN QALU INSTRUCTION CASES ===
+     case AluOp::kQAlloc_A: 
+        //  std::cout << qalloc_a(a,b) << "\n";
+         return {qalloc_a(a, b), false};
+     case AluOp::kQAlloc_B:
+         return {qalloc_b(a, b), false};
+     case AluOp::kQHA:
+         return {qha(a, b), false};
+     case AluOp::kQHB:
+         return {qhb(a, b), false};
+     case AluOp::kQXA:
+         return {qxa(a, b), false};
+     case AluOp::kQXB:
+         return {qxb(a, b), false};
+     case AluOp::kQPhase:
+         return {qphase(a, b), false};
+     case AluOp::kQMeas:
+         return {qmeas(a, b), false};
+     case AluOp::kQNormA:
+         return {qnorma(a, b), false};
+     case AluOp::kQNormB:
+         return {qnormb(a, b), false};
+     // === END QALU INSTRUCTION CASES ===
     default: return {0, false};
   }
 }
