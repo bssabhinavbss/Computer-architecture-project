@@ -65,7 +65,7 @@ static inline float float16_to_float(uint16_t h){
             }
             
             man_h &= 0x03FFu;
-s
+
             int32_t exp_f = (127 - 15) - shift + 1; 
             uint32_t exp_f_bits = (uint32_t)(exp_f & 0xFF) << 23;
             uint32_t man_f_bits = man_h << 13; 
@@ -440,7 +440,7 @@ static uint64_t qphase(uint64_t a, uint64_t b) {
    
     if(tag == 0x1){ 
         res_r = apply_noise(res_r);
-        res_i = apply_oise(res_i);
+        res_i = apply_noise(res_i);
     }
     
 
@@ -1816,7 +1816,7 @@ static std::string decode_fclass(uint16_t res) {
         int64_t laneA = (a >> (i * 2)) & 0x3;
         int64_t laneB = (b >> (i * 2)) & 0x3;
         int64_t sum = laneA % laneB;
-        if(sum > 1) ={
+        if(sum > 1){
           sum = 1;  // saturate
         }
         else if(sum < -2){
