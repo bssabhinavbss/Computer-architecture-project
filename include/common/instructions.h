@@ -557,40 +557,34 @@ inline constexpr std::array<InstructionEncoding, static_cast<size_t>(Instruction
   InstructionEncoding(Instruction::kfnmadd_d, 0b1001111, 0b01, -1, -1, -1, -1), // kfnmadd_d
 
 // BFloat16 instructions
- // R-Type (using opcode 0b1010011 and custom funct7)
+
  InstructionEncoding(Instruction::kfadd_bf16, 0b1010011, -1, -1, -1, -1, 0b0011000), // kfadd_bf16
  InstructionEncoding(Instruction::kfsub_bf16, 0b1010011, -1, -1, -1, -1, 0b0011001), // kfsub_bf16
  InstructionEncoding(Instruction::kfmul_bf16, 0b1010011, -1, -1, -1, -1, 0b0011010), // kfmul_bf16
  InstructionEncoding(Instruction::kfmax_bf16, 0b1010011, -1, -1, -1, -1, 0b0011011), // kfmax_bf16
  
- // R4-Type (using opcode 0b1000011 and custom funct2/fmt)
- // Changed fmt from 0b10 (conflicts with fp16) to 0b11 (reserved custom)
  InstructionEncoding(Instruction::kfmadd_bf16, 0b1000011, 0b10, -1, -1, -1, -1), // kfmadd_bf16
 
- // R-Type (using opcode 0b1010011 and new custom funct7)
-// R-Type (using opcode 0b1010011 and new custom funct7)
+// Float16 instructions
  InstructionEncoding(Instruction::kfadd_fp16, 0b1010011, -1, -1, -1, -1, 0b0101000), // kfadd_fp16
  InstructionEncoding(Instruction::kfsub_fp16, 0b1010011, -1, -1, -1, -1, 0b0101001), // kfsub_fp16
  InstructionEncoding(Instruction::kfmul_fp16, 0b1010011, -1, -1, -1, -1, 0b0101010), // kfmul_fp16
  InstructionEncoding(Instruction::kfmax_fp16, 0b1010011, -1, -1, -1, -1, 0b0101011), // kfmax_fp16
  InstructionEncoding(Instruction::kfdot_fp16, 0b1010011, -1, -1, -1, -1, 0b0101110), // kfdot_fp16
 
- // R4-Type (using opcode 0b1000011 and custom fmt=0b11)
  InstructionEncoding(Instruction::kfmadd_fp16, 0b1000011, 0b11, -1, -1, -1, -1),
 
  // MSFP16 Brainwave
 
- // --- MSFP16 (4× packed with shared exponent) ---
-  // R-type on 0b1010011
   InstructionEncoding(Instruction::kfadd_msfp16, 0b1010011, -1, -1, -1, -1, 0b0111000), // fadd.msfp16
   InstructionEncoding(Instruction::kfsub_msfp16, 0b1010011, -1, -1, -1, -1, 0b0111001), // fsub.msfp16
   InstructionEncoding(Instruction::kfmul_msfp16, 0b1010011, -1, -1, -1, -1, 0b0111010), // fmul.msfp16
   InstructionEncoding(Instruction::kfmax_msfp16, 0b1010011, -1, -1, -1, -1, 0b0111011), // fmax.msfp16
-  // R4-type on custom-0 opcode
-  InstructionEncoding(Instruction::kfmadd_msfp16, 0b0001011, 0b00, -1, -1, -1, -1), // fmadd.msfp16 (custom)
+
+  InstructionEncoding(Instruction::kfmadd_msfp16, 0b0001011, 0b00, -1, -1, -1, -1), // fmadd.msfp16
 
 
-  // === Quantum ALU Instructions (custom-0 opcode 0b0001010) ===
+  // Quantum ALU
   InstructionEncoding(Instruction::kqalloc_a,  0b0110011, -1, 0b000, -1, -1, 0b0101010), // QALLOC.A
   InstructionEncoding(Instruction::kqalloc_b,  0b0110011, -1, 0b001, -1, -1, 0b0101010), // QALLOC.B
   InstructionEncoding(Instruction::kqha,       0b0110011, -1, 0b010, -1, -1, 0b0101010), // QHA
@@ -601,7 +595,7 @@ inline constexpr std::array<InstructionEncoding, static_cast<size_t>(Instruction
   InstructionEncoding(Instruction::kqmeas,     0b0110011, -1, 0b111, -1, -1, 0b0101010), // QMEAS
   InstructionEncoding(Instruction::kqnorma,    0b0110011, -1, 0b111, -1, -1, 0b0101011), // QNORMA
   InstructionEncoding(Instruction::kqnormb,    0b0110011, -1, 0b110, -1, -1, 0b0101011), // QNORMB
-  // ==========================================================
+  
 }};
 
 const std::array<InstructionEncoding, static_cast<size_t>(Instruction::COUNT)> runtime_instruction_encoding_array = compiletime_instruction_encoding_array;

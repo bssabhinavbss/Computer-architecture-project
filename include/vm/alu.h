@@ -49,21 +49,21 @@ enum class AluOp {
     kOr, ///< Bitwise kOr operation.
     kXor, ///< Bitwise kXor operation.
 
-    kAdd_simd32, ///<Newly added instruction>///
+    kAdd_simd32, 
     kSub_simd32,
     kMul_simd32,
     kLoad_simd32,
     kDiv_simd32,
     kRem_simd32,
 
-    kAdd_simd16, ///<Newly added instruction>///
+    kAdd_simd16, 
     kSub_simd16,
     kMul_simd16,
     kLoad_simd16,
     kDiv_simd16,
     kRem_simd16,
 
-    kAdd_simd8, ///<Newly added instruction>///
+    kAdd_simd8, 
     kSub_simd8,
     kMul_simd8,
     kLoad_simd8,
@@ -71,7 +71,7 @@ enum class AluOp {
     kRem_simd8,
     
 
-    kAdd_simd4, ///<Newly added instruction>///
+    kAdd_simd4, 
     kSub_simd4,
     kMul_simd4,
     kLoad_simd4,
@@ -79,7 +79,7 @@ enum class AluOp {
     kRem_simd4,
 
 
-    kAdd_simd2, ///<Newly added instruction>///
+    kAdd_simd2, 
     kSub_simd2,
     kMul_simd2,
     kLoad_simd2,
@@ -87,7 +87,7 @@ enum class AluOp {
     kRem_simd2,
 
 
-    kAdd_simdb, ///<Newly added instruction>///
+    kAdd_simdb, 
     kSub_simdb,
     kMul_simdb,
     kLoad_simdb,
@@ -100,7 +100,7 @@ enum class AluOp {
     kEcc_mul,
     kEcc_div,
 
-    kAdd_cache, ///<Newly added instruction>///
+    kAdd_cache, 
     kSub_cache,
     kMul_cache,
     kDiv_cache,
@@ -192,6 +192,7 @@ enum class AluOp {
     FMAX_BF16,
     FMADD_BF16,
 
+    // Float16 instructionss
 
     FADD_FP16,
   FSUB_FP16,
@@ -208,7 +209,7 @@ enum class AluOp {
   FMAX_MSFP16,
   FMADD_MSFP16,
 
-      // === QALU Quantum-Tagged Instructions ===
+      // Quantum ALU
    kQAlloc_A,
    kQAlloc_B,
    kQHA,
@@ -219,7 +220,7 @@ enum class AluOp {
    kQMeas,
    kQNormA,
    kQNormB,
-   // ======================================
+   
 };
 
 inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
@@ -352,6 +353,8 @@ case AluOp::FADD_BF16: os << "FADD_BF16"; break;
  case AluOp::FMAX_BF16: os << "FMAX_BF16"; break;
   case AluOp::FMADD_BF16: os << "FMADD_BF16"; break;
 
+  // Float16 operations
+
 
   case AluOp::FADD_FP16: os << "FADD_FP16"; break;
 case AluOp::FSUB_FP16: os << "FSUB_FP16"; break;
@@ -368,7 +371,7 @@ case AluOp::FMADD_FP16: os << "FMADD_FP16"; break;
   case AluOp::FMADD_MSFP16: os << "FMADD_MSFP16"; break;
 
 
-          // === QALU Quantum-Tagged Instructions ===
+          // Quantum ALU
    case AluOp::kQAlloc_A: os << "kQAlloc_A"; break;
    case AluOp::kQAlloc_B: os << "kQAlloc_B"; break;
    case AluOp::kQHA: os << "kQHA"; break;
@@ -379,7 +382,7 @@ case AluOp::FMADD_FP16: os << "FMADD_FP16"; break;
    case AluOp::kQMeas: os << "kQMeas"; break;
    case AluOp::kQNormA: os << "kQNormA"; break;
    case AluOp::kQNormB: os << "kQNormB"; break;
-   // ======================================
+  
 
 
         default: os << "UNKNOWN"; break;

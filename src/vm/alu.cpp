@@ -13,12 +13,12 @@
 #include <iostream>
 #include <vector>
 #include <array>
-#include <climits>   // for INT_MIN, INT_MAX
-// #include <cmath>     // for frexp, ldexp, fabs, lrintf
-#include <cstdlib>   // For std::rand(), RAND_MAX, std::srand
-#include <algorithm> // For std::max(), std::min()
-#include <limits>    // For std::numeric_limits
-#include <ctime>     // For std::time (to seed rand)
+#include <climits>   
+
+#include <cstdlib>  
+#include <algorithm> 
+#include <limits>    
+#include <ctime>   
 
 // ...
 
@@ -26,57 +26,57 @@
 namespace alu {
 
 
-// Seed the random number generator once when the program loads
-static bool seeded = [](){ std::srand(std::time(nullptr)); return true; }();
+static bool seeded = [](){ 
+  std::srand(std::time(nullptr)); return true;
+ }();
 
 
-// Safe bit-casts (no aliasing UB)
-static inline uint32_t f32_to_bits(float f) {
+// bit - casts
+static inline uint32_t f32_to_bits(float f){
     uint32_t u;
     std::memcpy(&u, &f, sizeof u);
     return u;
 }
-static inline float bits_to_f32(uint32_t u) {
+static inline float bits_to_f32(uint32_t u){
     float f;
     std::memcpy(&f, &u, sizeof f);
     return f;
 }
 
 
-// Convert IEEE 754 half (binary16) -> float32
-static inline float float16_to_float(uint16_t h) {
+// float16 to float32
+static inline float float16_to_float(uint16_t h){
     uint32_t sign  = (uint32_t)(h & 0x8000u) << 16;      // sign to bit 31
     uint32_t exp_h = (uint32_t)(h & 0x7C00u) >> 10;      // 5-bit exponent
     uint32_t man_h = (uint32_t)(h & 0x03FFu);            // 10-bit mantissa
 
     uint32_t out;
 
-    if (exp_h == 0) { // zero or subnormal
-        if (man_h == 0) {
-            // +/- 0
-            out = sign; // exponent=0, mantissa=0
-        } else {
-            // subnormal -> normalize
+    if(exp_h == 0){ 
+        if(man_h == 0){
+            
+            out = sign; 
+        }else{
+            
             int shift = 0;
-            while ((man_h & 0x0400u) == 0) { // bring leading 1 to bit 10
+            while((man_h & 0x0400u) == 0){ 
                 man_h <<= 1;
                 ++shift;
             }
-            // remove the leading 1 (implicit)
+            
             man_h &= 0x03FFu;
-            // exponent after normalization:
-            // original exponent is -14 (half subnormals), minus extra left shifts
-            int32_t exp_f = (127 - 15) - shift + 1; // +1 because we placed the leading 1
+s
+            int32_t exp_f = (127 - 15) - shift + 1; 
             uint32_t exp_f_bits = (uint32_t)(exp_f & 0xFF) << 23;
-            uint32_t man_f_bits = man_h << 13; // 10 -> 23 mantissa alignment
+            uint32_t man_f_bits = man_h << 13; 
             out = sign | exp_f_bits | man_f_bits;
         }
-    } else if (exp_h == 0x1Fu) { // Inf/NaN
-        // Map to float32 Inf/NaN
-        uint32_t man_f_bits = (man_h ? ((man_h << 13) | 0x00400000u) : 0u); // set quiet bit if NaN
+    }else if(exp_h == 0x1Fu){ 
+        
+        uint32_t man_f_bits = (man_h ? ((man_h << 13) | 0x00400000u) : 0u); 
         out = sign | 0x7F800000u | man_f_bits;
-    } else {
-        // normal: (exp_h - 15 + 127)
+    }else{
+        
         uint32_t exp_f_bits = ((exp_h - 15u + 127u) & 0xFFu) << 23;
         uint32_t man_f_bits = man_h << 13;
         out = sign | exp_f_bits | man_f_bits;
@@ -85,60 +85,56 @@ static inline float float16_to_float(uint16_t h) {
     return bits_to_f32(out);
 }
 
-// Convert float32 -> IEEE 754 half (binary16), round to nearest-even
-static inline uint16_t float_to_float16(float f) {
+// float32 to float16
+static inline uint16_t float_to_float16(float f){
     uint32_t u = f32_to_bits(f);
     uint32_t sign = (u >> 16) & 0x8000u;
     uint32_t exp  = (u >> 23) & 0xFFu;
     uint32_t man  =  u & 0x007FFFFFu;
 
     // NaN
-    if ((exp == 0xFFu) && (man != 0)) {
-        // quiet NaN with payload
+    if((exp == 0xFFu) && (man != 0)){
+        
         uint16_t payload = (uint16_t)(man >> 13);
         return (uint16_t)(sign | 0x7C00u | (payload ? payload : 0x0001u));
     }
     // Inf
-    if ((exp == 0xFFu) && (man == 0)) {
+    if((exp == 0xFFu) && (man == 0)){
         return (uint16_t)(sign | 0x7C00u);
     }
 
     // Normalize or denormalize
-    int32_t new_exp = (int32_t)exp - 127 + 15; // rebias to half
+    int32_t new_exp = (int32_t)exp - 127 + 15; 
 
-    if (new_exp >= 0x1F) {
-        // Overflow -> Inf
+    if(new_exp >= 0x1F){
+        
         return (uint16_t)(sign | 0x7C00u);
     }
 
-    if (new_exp <= 0) {
-        // Subnormal or zero in half
-        if (new_exp < -10) {
-            // too small => zero
+    if(new_exp <= 0){
+        
+        if(new_exp < -10){
+            
             return (uint16_t)sign;
         }
-        // subnormal: put the hidden leading 1 back then shift right
-        // 0x800000 is the implicit 1 for float32 mantissa
-        uint32_t sub = (man | 0x00800000u) >> (uint32_t)(1 - new_exp); // shift in [1..10]
-        // round to nearest even using the lower 13 bits
+        uint32_t sub = (man | 0x00800000u) >> (uint32_t)(1 - new_exp); 
         uint32_t round_bit = (sub & 0x00001000u);
         uint32_t sticky    = (sub & 0x00001FFFu);
-        sub = (sub + 0x00001000u) >> 13; // add half-ULP then chop
-        if ((sticky == 0x00001000u) && (sub & 1u)) {
-            // tie to even already handled by the add; nothing extra needed
+        sub = (sub + 0x00001000u) >> 13;
+        if((sticky == 0x00001000u) && (sub & 1u)){
         }
         return (uint16_t)(sign | (sub & 0x03FFu));
     }
 
-    // Normal half: round mantissa from 23 to 10 bits
+    
     uint32_t mant_rounded = man;
-    uint32_t round_bits   = mant_rounded & 0x1FFFu; // 13 LSBs
-    mant_rounded >>= 13;                             // keep top 10 mantissa bits
+    uint32_t round_bits   = mant_rounded & 0x1FFFu;
+    mant_rounded >>= 13;         
 
-    // round to nearest even
-    if (round_bits > 0x1000u || (round_bits == 0x1000u && (mant_rounded & 1u))) {
+
+    if(round_bits > 0x1000u || (round_bits == 0x1000u && (mant_rounded & 1u))){
         mant_rounded++;
-        if (mant_rounded == 0x400u) { // mantissa overflow -> bump exponent
+        if(mant_rounded == 0x400u){ 
             mant_rounded = 0;
             new_exp++;
             if (new_exp >= 0x1F) {
@@ -150,51 +146,35 @@ static inline uint16_t float_to_float16(float f) {
     return (uint16_t)(sign | ((uint16_t)new_exp << 10) | (uint16_t)(mant_rounded & 0x03FFu));
 }
 
-// Extract lane i (0..3) from a 64-bit packed word of 4×fp16
-static inline uint16_t fp16_lane(uint64_t x, int i) {
+
+static inline uint16_t fp16_lane(uint64_t x, int i){
     return (uint16_t)((x >> (i * 16)) & 0xFFFFu);
 }
 
-// Insert lane i into a 64-bit packed word
-static inline void fp16_set_lane(uint64_t &dst, int i, uint16_t h) {
+
+static inline void fp16_set_lane(uint64_t &dst, int i, uint16_t h){
     const uint64_t mask = ~(0xFFFFull << (i * 16));
     dst = (dst & mask) | ((uint64_t)(h & 0xFFFFu) << (i * 16));
 }
 
 
-
-// --- MSFP16 PACK / UNPACK ---
-
-/**
- * MSFP16 format:
- *   [8-bit shared exponent][14-bit lane0][14-bit lane1][14-bit lane2][14-bit lane3]
- *   Each 14-bit lane: [1 sign][13 mantissa]
- *   Mantissa has NO implicit 1 (pure fixed-point fraction)
- *   Shared exponent is biased by +127 (same as IEEE-754 single)
- */
-
-// ------------------- UNPACK -------------------
-static inline std::array<float, 4> msfp16_unpack(uint64_t reg)
-{
+static inline std::array<float, 4> msfp16_unpack(uint64_t reg){
     std::array<float, 4> out;
 
     uint32_t shared_exp_bits = (reg >> 56) & 0xFF;
-    if (shared_exp_bits == 0)
-    {
+    if(shared_exp_bits == 0){
         out.fill(0.0f);
         return out;
     }
 
-    int e_unb = (int)shared_exp_bits - 127; // unbiased exponent
+    int e_unb = (int)shared_exp_bits - 127; 
 
-    for (int i = 0; i < 4; ++i)
-    {
+    for(int i = 0; i < 4; ++i){
         uint32_t lane_bits = (reg >> (i * 14)) & 0x3FFF;
         int s = (lane_bits >> 13) & 1;
         uint32_t m = lane_bits & 0x1FFF;
 
-        if (m == 0)
-        {
+        if(m == 0){
             out[i] = s ? -0.0f : 0.0f;
             continue;
         }
@@ -206,17 +186,14 @@ static inline std::array<float, 4> msfp16_unpack(uint64_t reg)
     return out;
 }
 
-// ------------------- PACK -------------------
-static inline uint64_t msfp16_pack(const std::array<float, 4> &vals)
-{
+
+static inline uint64_t msfp16_pack(const std::array<float, 4> &vals){
     bool all_zero = true;
     int e_max = INT_MIN;
 
-    // --- Decompose into sign, exponent, fraction ---
-    auto decompose = [](float x, int &s, int &e, float &frac)
-    {
-        if (x == 0.0f)
-        {
+
+    auto decompose = [](float x, int &s, int &e, float &frac){
+        if(x == 0.0f){
             s = 0;
             e = INT_MIN;
             frac = 0.0f;
@@ -225,48 +202,50 @@ static inline uint64_t msfp16_pack(const std::array<float, 4> &vals)
         s = std::signbit(x) ? 1 : 0;
         float ax = std::fabs(x);
         int ei;
-        float m = std::frexp(ax, &ei); // ax = m * 2^ei, m in [0.5, 1)
-        frac = m * 2.0f;               // [1, 2)
-        e = ei - 1;                    // unbiased exponent
+        float m = std::frexp(ax, &ei); 
+        frac = m * 2.0f;               
+        e = ei - 1;                  
     };
 
     int S[4], E[4];
     float F[4];
-    for (int i = 0; i < 4; ++i)
-    {
+    for(int i = 0; i < 4; ++i){
         decompose(vals[i], S[i], E[i], F[i]);
-        if (E[i] != INT_MIN)
-        {
+        if(E[i] != INT_MIN){
             all_zero = false;
             e_max = std::max(e_max, E[i]);
         }
     }
 
-    if (all_zero)
+    if(all_zero){
         return 0ull;
+    }
 
     // Clamp shared exponent to representable range
-    if (e_max > 127)
-        e_max = 127;
-    if (e_max < -126)
-        e_max = -126;
+    if(e_max > 127){
+      e_max = 127;
+    }
+    if(e_max < -126){
+      e_max = -126;
+    }
 
     uint32_t shared_exp_bits = (uint32_t)(e_max + 127);
-
-    // --- Quantize each lane ---
-// --- Quantize each lane ---
-auto quant_lane = [&](int s, int e, float frac) -> uint16_t
-{
-    if (e == INT_MIN)
-        return (uint16_t)(s << 13); // ±0
+auto quant_lane = [&](int s, int e, float frac) -> uint16_t{
+    if(e == INT_MIN){
+        return (uint16_t)(s << 13); 
+}
 
     int shift = e_max - e;
-    float scaled = std::ldexp(frac, -shift); // frac * 2^{-shift}
+    float scaled = std::ldexp(frac, -shift); 
     float f = scaled * (float)(1 << 13);
 
-    // Manual clamp for cross-compiler safety
-    if (f < 0.0f) f = 0.0f;
-    else if (f > (float)((1 << 13) - 1)) f = (float)((1 << 13) - 1);
+  
+    if(f < 0.0f){
+      f = 0.0f;
+    }
+    else if(f > (float)((1 << 13) - 1)){
+      f = (float)((1 << 13) - 1);
+    }
 
     int mag = (int)std::lrintf(f);
     return (uint16_t)((s << 13) | (mag & 0x1FFF));
@@ -274,8 +253,7 @@ auto quant_lane = [&](int s, int e, float frac) -> uint16_t
 
 
     uint64_t lanes = 0;
-    for (int i = 0; i < 4; ++i)
-    {
+    for(int i = 0; i < 4; ++i){
         uint16_t lane = quant_lane(S[i], E[i], F[i]);
         lanes |= (uint64_t)lane << (i * 14);
     }
@@ -283,54 +261,35 @@ auto quant_lane = [&](int s, int e, float frac) -> uint16_t
     return lanes | ((uint64_t)shared_exp_bits << 56);
 }
 
-// --- End MSFP16 Helper Functions ---
-
-
-
-
- // Converts a 32-bit float to a 16-bit bfloat16 (RTNE).
-
-// Converts a 32-bit float to a 16-bit bfloat16 (RTNE).
-
-// Converts a 32-bit float to a 16-bit bfloat16 (RTNE).
-
-uint16_t float_to_bfloat16(float f) {
+// convert float32 to bfloat16
+uint16_t float_to_bfloat16(float f){
     union {
         float f;
         uint32_t u;
     } un;
     un.f = f;
 
-    // Handle NaN
-    if (std::isnan(f)) {
-        // A standard qNaN bfloat16 (sign bit, all exponent, quiet bit)
+    if(std::isnan(f)){
+        
         return (uint16_t)((un.u >> 16) & 0x8000) | 0x7FC0;
     }
 
-    // Handle Infinity
-    if (std::isinf(f)) {
+    if(std::isinf(f)){
         return (uint16_t)((un.u >> 16) & 0x8000) | 0x7F80;
     }
-
-    // Get the 16 bits that will be *discarded*
     uint32_t lsb = un.u & 0xFFFF;
     
-    // Perform Round-to-Nearest-Even
-    // Check if discarded bits are > 0.5 (0x8000)
-    // Or if they are == 0.5 (0x8000) AND the last *kept* bit is 1
-    if (lsb > 0x8000 || (lsb == 0x8000 && (un.u & 0x10000))) {
-        // Round up
+    if(lsb > 0x8000 || (lsb == 0x8000 && (un.u & 0x10000))){
         un.u += 0x10000;
     }
 
-    // Return the upper 16 bits
     return (uint16_t)(un.u >> 16);
 }
 
 
-// Converts a 16-bit bfloat16 to a 32-bit float.
+// convertt bfloat16 to float32
 
-float bfloat16_to_float(uint16_t b) {
+float bfloat16_to_float(uint16_t b){
     union {
         uint32_t u;
         float f;
@@ -340,72 +299,57 @@ float bfloat16_to_float(uint16_t b) {
     return un.f;
 }
 
-// === BEGIN QALU HELPER FUNCTIONS ===
+// Quantum ALU
 
-// Constants for 30-bit signed fixed-point (Q1.29)
+
 static constexpr int64_t QALU_SCALE = 1LL << 29;
 static constexpr double QALU_SCALE_INV = 1.0 / (double)QALU_SCALE;
-static constexpr int64_t QALU_MASK = 0x3FFFFFFFLL; // 30 bits
+static constexpr int64_t QALU_MASK = 0x3FFFFFFFLL; 
 static constexpr int64_t QALU_MAX_VAL = (1LL << 29) - 1;
 static constexpr int64_t QALU_MIN_VAL = -(1LL << 29);
 static constexpr double SQRT_2_INV = 0.7071067811865476; // 1/sqrt(2)
 
-/**
- * @brief Converts a 30-bit signed fixed-point value to a double.
- */
-static double fixed_to_double(int64_t fixed) {
-    // Sign-extend the 30-bit value to 64 bits
-    if (fixed & (1LL << 29)) {
+
+// convert 30 bit signed fixed point value to double
+static double fixed_to_double(int64_t fixed){
+    
+    if(fixed & (1LL << 29)){
         fixed |= ~QALU_MASK;
     }
     return (double)fixed * QALU_SCALE_INV;
 }
 
-/**
- * @brief Converts a double to a 30-bit signed fixed-point, with saturation.
- */
-static int64_t double_to_fixed(double d) {
-    double scaled = d * QALU_SCALE;
 
-    // --- REPLACED CODE ---
-    // Manually clamp/saturate the value to the Q1.29 range
-    // This removes the dependency on std::max/min AND fixes the 1.0 bug
-    if (scaled > (double)QALU_MAX_VAL) {
+ // convert doubleto 30 bit signed fixed point with saturation
+static int64_t double_to_fixed(double d){
+    double scaled = d * QALU_SCALE;
+    if(scaled > (double)QALU_MAX_VAL){
         scaled = (double)QALU_MAX_VAL;
-    } else if (scaled < (double)QALU_MIN_VAL) {
+    }else if(scaled < (double)QALU_MIN_VAL){
         scaled = (double)QALU_MIN_VAL;
     }
-    // --- END REPLACED CODE ---
 
     return (int64_t)std::round(scaled);
 }
-/**
- * @brief Extracts the 4-bit tag from a QALU register.
- */
-static uint8_t get_tag(uint64_t reg_val) {
+
+static uint8_t get_tag(uint64_t reg_val){
     return (uint8_t)((reg_val >> 60) & 0xF);
 }
 
-/**
- * @brief Extracts and converts the 30-bit real part of a QALU register.
- */
-static double get_real(uint64_t reg_val) {
+
+static double get_real(uint64_t reg_val){
     int64_t fixed = (reg_val >> 30) & QALU_MASK;
     return fixed_to_double(fixed);
 }
 
-/**
- * @brief Extracts and converts the 30-bit imaginary part of a QALU register.
- */
-static double get_imag(uint64_t reg_val) {
+
+static double get_imag(uint64_t reg_val){
     int64_t fixed = reg_val & QALU_MASK;
     return fixed_to_double(fixed);
 }
 
-/**
- * @brief Packs a tag, real, and imaginary part into a 64-bit QALU register.
- */
-static uint64_t pack_amplitude(uint8_t tag, double real, double imag) {
+ // helper for packing a tag, real , imaginary part into 64 bit quamntum ALU register
+static uint64_t pack_amplitude(uint8_t tag, double real, double imag){
     int64_t fixed_r = double_to_fixed(real);
     int64_t fixed_i = double_to_fixed(imag);
     
@@ -416,38 +360,26 @@ static uint64_t pack_amplitude(uint8_t tag, double real, double imag) {
     return tag_bits | real_bits | imag_bits;
 }
 
-/**
- * @brief Calculates the squared norm |a|^2 of a complex number.
- */
-static double get_norm_squared(double real, double imag) {
+
+ // calculate sqaured norm of a complex number
+static double get_norm_squared(double real, double imag){
     return real * real + imag * imag;
 }
 
-/**
- * @brief Applies simple random noise to a double value.
- * Used for tag-based logic.
- */
-static double apply_noise(double val) {
-    // Simple noise: add a random value between -0.01 and +0.01
-    // (This is a placeholder, you can make the noise model more complex)
+ // apply random noise to double value (simualtion for othe rprobabilisitc applications)
+static double apply_noise(double val){
     double noise = ((double)std::rand() / (double)RAND_MAX) * 0.02 - 0.01;
     return val + noise;
 }
 
-// === END QALU HELPER FUNCTIONS ===
-
-
-// === BEGIN QALU INSTRUCTION IMPLEMENTATIONS ===
-
-// Note: 'a' is rs1_val (alpha), 'b' is rs2_val (beta) unless specified
-static uint64_t qalloc_a(uint64_t rs1, uint64_t rs2) {
+static uint64_t qalloc_a(uint64_t rs1, uint64_t rs2){
     uint8_t tag = (rs2 != 0) ? get_tag(rs2) : get_tag(rs1);
     double real = get_real(rs1);
     double imag = get_imag(rs1);
     return pack_amplitude(tag, real, imag);
 }
 
-static uint64_t qalloc_b(uint64_t rs1, uint64_t rs2) {
+static uint64_t qalloc_b(uint64_t rs1, uint64_t rs2){
     uint8_t tag = (rs2 != 0) ? get_tag(rs2) : get_tag(rs1);
     double real = get_real(rs1);
     double imag = get_imag(rs1);
@@ -455,156 +387,131 @@ static uint64_t qalloc_b(uint64_t rs1, uint64_t rs2) {
 }
 
 
-/**
- * @brief QHA: Calculates alpha' = (alpha + beta) / sqrt(2).
- */
-static uint64_t qha(uint64_t a, uint64_t b) {
-    uint8_t tag = get_tag(a); // Propagate tag from alpha
+static uint64_t qha(uint64_t a, uint64_t b){
+    uint8_t tag = get_tag(a); 
     double ar = get_real(a); double ai = get_imag(a);
     double br = get_real(b); double bi = get_imag(b);
 
     double res_r = (ar + br) * SQRT_2_INV;
     double res_i = (ai + bi) * SQRT_2_INV;
 
-    // --- Tag-Based Logic Implementation ---
-    if (tag == 0x1) { // Example: Tag 1 means "apply noise"
+    
+    if(tag == 0x1){ // applying noise if tag is 1 for demonstration
         res_r = apply_noise(res_r);
         res_i = apply_noise(res_i);
     }
-    // else if (tag == 0x2) { // Example: Tag 2 means "lower precision"
-    //    res_r = (double)double_to_fixed_16bit(res_r); 
-    // }
-    // --- End Tag-Based Logic ---
 
     return pack_amplitude(tag, res_r, res_i);
 }
 
-/**
- * @brief QHB: Calculates beta' = (alpha - beta) / sqrt(2).
- */
-static uint64_t qhb(uint64_t a, uint64_t b) {
-    uint8_t tag = get_tag(a); // Propagate tag from alpha
+
+static uint64_t qhb(uint64_t a, uint64_t b){
+    uint8_t tag = get_tag(a); 
     double ar = get_real(a); double ai = get_imag(a);
     double br = get_real(b); double bi = get_imag(b);
 
     double res_r = (ar - br) * SQRT_2_INV;
     double res_i = (ai - bi) * SQRT_2_INV;
     
-    // --- Tag-Based Logic Implementation ---
-    if (tag == 0x1) { // Example: Tag 1 means "apply noise"
+    
+    if(tag == 0x1){ 
         res_r = apply_noise(res_r);
         res_i = apply_noise(res_i);
     }
-    // --- End Tag-Based Logic ---
+    
 
     return pack_amplitude(tag, res_r, res_i);
 }
 
-/**
- * @brief QPHASE: Calculates beta' = beta * e^(i*theta).
- * rs1 (a) holds beta. rs2 (b) holds the angle theta as a Q1.29 value.
- */
 static uint64_t qphase(uint64_t a, uint64_t b) {
     uint8_t tag = get_tag(a);
     double br = get_real(a); double bi = get_imag(a);
 
-    // Assume theta is stored in the 'imag' part of rs2 (b) as a Q1.29 value
+    
     double theta = get_imag(b); 
     
     double cos_t = std::cos(theta);
     double sin_t = std::sin(theta);
 
-    // Complex multiplication: (br + i*bi) * (cos_t + i*sin_t)
+   
     double res_r = br * cos_t - bi * sin_t;
     double res_i = br * sin_t + bi * cos_t;
     
-    // --- Tag-Based Logic Implementation ---
-    if (tag == 0x1) { // Example: Tag 1 means "apply noise"
+   
+    if(tag == 0x1){ 
         res_r = apply_noise(res_r);
-        res_i = apply_noise(res_i);
+        res_i = apply_oise(res_i);
     }
-    // --- End Tag-Based Logic ---
+    
 
     return pack_amplitude(tag, res_r, res_i);
 }
 
-/**
- * @brief QXA: Calculates alpha' = beta.
- */
-static uint64_t qxa(uint64_t a, uint64_t b) {
-    return b; // Pass-through
-}
-
-/**
- * @brief QXB: Calculates beta' = alpha.
- */
-static uint64_t qxb(uint64_t a, uint64_t b) {
-    return a; // Pass-through
+static uint64_t qxa(uint64_t a, uint64_t b){
+    return b; 
 }
 
 
-/**
- * @brief QMEAS: Measures the state (a, b) and returns a classical 0 or 1.
- */
-static uint64_t qmeas(uint64_t a, uint64_t b) {
+static uint64_t qxb(uint64_t a, uint64_t b){
+    return a; 
+}
+
+// meansure state 0 or 1 and return classical 0 or 1
+static uint64_t qmeas(uint64_t a, uint64_t b){
     double ar = get_real(a); double ai = get_imag(a);
     double br = get_real(b); double bi = get_imag(b);
 
-    double p0 = get_norm_squared(ar, ai); // |alpha|^2
-    double p1 = get_norm_squared(br, bi); // |beta|^2
+    double p0 = get_norm_squared(ar, ai);
+    double p1 = get_norm_squared(br, bi); 
     
     double total_p = p0 + p1;
-    if (total_p < 1e-9) { // Avoid division by zero if state is (0,0)
+    if(total_p < 1e-9){ 
         return 0;
     }
 
-    // Get a random double between 0.0 and 1.0
+
     double rand_val = (double)std::rand() / (double)RAND_MAX;
 
-    if (rand_val < (p0 / total_p)) {
+    if(rand_val < (p0 / total_p)){
         return 0; // Collapsed to |0>
-    } else {
+    }else{
         return 1; // Collapsed to |1>
     }
 }
 
-/**
- * @brief QNORMA: Calculates alpha' = alpha / N.
- */
-static uint64_t qnorma(uint64_t a, uint64_t b) {
+
+static uint64_t qnorma(uint64_t a, uint64_t b){
     uint8_t tag = get_tag(a);
     double ar = get_real(a); double ai = get_imag(a);
     double br = get_real(b); double bi = get_imag(b);
 
     double norm_sq = get_norm_squared(ar, ai) + get_norm_squared(br, bi);
     
-    if (norm_sq < 1e-9) { // Avoid division by zero
-        return a; // Return original alpha
+    if(norm_sq < 1e-9){ // Avoid division by zero
+        return a; 
     }
     
     double norm = std::sqrt(norm_sq);
     return pack_amplitude(tag, ar / norm, ai / norm);
 }
 
-/**
- * @brief QNORMB: Calculates beta' = beta / N.
- */
-static uint64_t qnormb(uint64_t a, uint64_t b) {
-    uint8_t tag = get_tag(b); // Propagate tag from beta
+
+static uint64_t qnormb(uint64_t a, uint64_t b){
+    uint8_t tag = get_tag(b);
     double ar = get_real(a); double ai = get_imag(a);
     double br = get_real(b); double bi = get_imag(b);
 
     double norm_sq = get_norm_squared(ar, ai) + get_norm_squared(br, bi);
     
-    if (norm_sq < 1e-9) { // Avoid division by zero
-        return b; // Return original beta
+    if(norm_sq < 1e-9){ // Avoid division by zero
+        return b; 
     }
     
     double norm = std::sqrt(norm_sq);
     return pack_amplitude(tag, br / norm, bi / norm);
 }
 
-// === END QALU INSTRUCTION IMPLEMENTATIONS ===
+
 
 
 
@@ -849,18 +756,18 @@ static std::string decode_fclass(uint16_t res) {
       int64_t sr1 = static_cast<int64_t>(sa1) + static_cast<int64_t>(sb1);
       int64_t sr2 = static_cast<int64_t>(sa2) + static_cast<int64_t>(sb2);
 
-    // Saturate sr1
-     if (sr1 > INT32_MAX){ 
+    
+     if(sr1 > INT32_MAX){ 
       sr1 = INT32_MAX;
      }
-     else if (sr1 < INT32_MIN){ 
+     else if(sr1 < INT32_MIN){ 
       sr1 = INT32_MIN;
      }
     // Saturate sr2
-     if (sr2 > INT32_MAX){ 
+     if(sr2 > INT32_MAX){ 
       sr2 = INT32_MAX;
      }
-     else if (sr2 < INT32_MIN){ 
+     else if(sr2 < INT32_MIN){ 
       sr2 = INT32_MIN;
      }
      int64_t sr = (sr2 & 0xFFFFFFFFLL) | (sr1 << 32);
@@ -878,17 +785,17 @@ static std::string decode_fclass(uint16_t res) {
       int64_t sr2 = static_cast<int64_t>(sa2) - static_cast<int64_t>(sb2);
 
     // Saturate sr1
-     if (sr1 > INT32_MAX){ 
+     if(sr1 > INT32_MAX){ 
       sr1 = INT32_MAX;
      }
-     else if (sr1 < INT32_MIN){ 
+     else if(sr1 < INT32_MIN){ 
       sr1 = INT32_MIN;
      }
     // Saturate sr2
-     if (sr2 > INT32_MAX){ 
+     if(sr2 > INT32_MAX){ 
       sr2 = INT32_MAX;
      }
-     else if (sr2 < INT32_MIN){ 
+     else if(sr2 < INT32_MIN){ 
       sr2 = INT32_MIN;
      }
      int64_t sr = (sr2 & 0xFFFFFFFFLL) | (sr1 << 32);
@@ -905,17 +812,17 @@ static std::string decode_fclass(uint16_t res) {
       int64_t sr2 = static_cast<int64_t>(sa2) * static_cast<int64_t>(sb2);
 
     // Saturate sr1
-     if (sr1 > INT32_MAX){ 
+     if(sr1 > INT32_MAX){ 
       sr1 = INT32_MAX;
      }
-     else if (sr1 < INT32_MIN){ 
+     else if(sr1 < INT32_MIN){ 
       sr1 = INT32_MIN;
      }
     // Saturate sr2
-     if (sr2 > INT32_MAX){ 
+     if(sr2 > INT32_MAX){ 
       sr2 = INT32_MAX;
      }
-     else if (sr2 < INT32_MIN){ 
+     else if(sr2 < INT32_MIN){ 
       sr2 = INT32_MIN;
      }
      int64_t sr = (sr2 & 0xFFFFFFFFLL) | (sr1 << 32);
@@ -934,7 +841,7 @@ static std::string decode_fclass(uint16_t res) {
 
     }
     case AluOp::kDiv_simd32: {
-      if (b==0) {
+      if(b==0){
         return {0, false};
       }
       auto sa = static_cast<int64_t>(a);
@@ -947,17 +854,17 @@ static std::string decode_fclass(uint16_t res) {
       int64_t sr2 = static_cast<int64_t>(sa2) / static_cast<int64_t>(sb2);
 
     // Saturate sr1
-     if (sr1 > INT32_MAX){ 
+     if(sr1 > INT32_MAX){ 
       sr1 = INT32_MAX;
      }
-     else if (sr1 < INT32_MIN){ 
+     else if(sr1 < INT32_MIN){ 
       sr1 = INT32_MIN;
      }
     // Saturate sr2
-     if (sr2 > INT32_MAX){ 
+     if(sr2 > INT32_MAX){ 
       sr2 = INT32_MAX;
      }
-     else if (sr2 < INT32_MIN){ 
+     else if(sr2 < INT32_MIN){ 
       sr2 = INT32_MIN;
      }
      int64_t sr = (sr2 & 0xFFFFFFFFLL) | (sr1 << 32);
@@ -965,7 +872,7 @@ static std::string decode_fclass(uint16_t res) {
 
     }
     case AluOp::kRem_simd32: {
-      if (b==0) {
+      if(b==0){
         return {0, false};
       }
       auto sa = static_cast<int64_t>(a);
@@ -978,17 +885,17 @@ static std::string decode_fclass(uint16_t res) {
       int64_t sr2 = static_cast<int64_t>(sa2) % static_cast<int64_t>(sb2);
 
     // Saturate sr1
-     if (sr1 > INT32_MAX){ 
+     if(sr1 > INT32_MAX){ 
       sr1 = INT32_MAX;
      }
-     else if (sr1 < INT32_MIN){ 
+     else if(sr1 < INT32_MIN){ 
       sr1 = INT32_MIN;
      }
     // Saturate sr2
-     if (sr2 > INT32_MAX){ 
+     if(sr2 > INT32_MAX){ 
       sr2 = INT32_MAX;
      }
-     else if (sr2 < INT32_MIN){ 
+     else if(sr2 < INT32_MIN){ 
       sr2 = INT32_MIN;
      }
      int64_t sr = (sr2 & 0xFFFFFFFFLL) | (sr1 << 32);
@@ -1021,10 +928,27 @@ static std::string decode_fclass(uint16_t res) {
       int32_t sr3 = static_cast<int32_t>(sa3) + static_cast<int32_t>(sb3);
       int32_t sr4 = static_cast<int32_t>(sa4) + static_cast<int32_t>(sb4);
       
-      if (sr1 > INT16_MAX) sr1 = INT16_MAX; else if (sr1 < INT16_MIN) sr1 = INT16_MIN;
-      if (sr2 > INT16_MAX) sr2 = INT16_MAX; else if (sr2 < INT16_MIN) sr2 = INT16_MIN;
-      if (sr3 > INT16_MAX) sr3 = INT16_MAX; else if (sr3 < INT16_MIN) sr3 = INT16_MIN;
-      if (sr4 > INT16_MAX) sr4 = INT16_MAX; else if (sr4 < INT16_MIN) sr4 = INT16_MIN;
+      if(sr1 > INT16_MAX){
+        sr1 = INT16_MAX;
+       } else if(sr1 < INT16_MIN){
+        sr1 = INT16_MIN;
+       }
+      if(sr2 > INT16_MAX){
+        sr2 = INT16_MAX;
+      }
+         else if(sr2 < INT16_MIN){
+          sr2 = INT16_MIN;
+         }
+      if(sr3 > INT16_MAX){
+        sr3 = INT16_MAX;
+       }else if(sr3 < INT16_MIN){
+        sr3 = INT16_MIN;
+       }
+      if(sr4 > INT16_MAX){
+        sr4 = INT16_MAX; 
+      }else if(sr4 < INT16_MIN){
+        sr4 = INT16_MIN;
+      }
 
       
       int64_t sr = (static_cast<int64_t>(sr1) << 48) |
@@ -1056,10 +980,27 @@ static std::string decode_fclass(uint16_t res) {
       int32_t sr3 = static_cast<int32_t>(sa3) - static_cast<int32_t>(sb3);
       int32_t sr4 = static_cast<int32_t>(sa4) - static_cast<int32_t>(sb4);
       
-      if (sr1 > INT16_MAX) sr1 = INT16_MAX; else if (sr1 < INT16_MIN) sr1 = INT16_MIN;
-      if (sr2 > INT16_MAX) sr2 = INT16_MAX; else if (sr2 < INT16_MIN) sr2 = INT16_MIN;
-      if (sr3 > INT16_MAX) sr3 = INT16_MAX; else if (sr3 < INT16_MIN) sr3 = INT16_MIN;
-      if (sr4 > INT16_MAX) sr4 = INT16_MAX; else if (sr4 < INT16_MIN) sr4 = INT16_MIN;
+      if(sr1 > INT16_MAX){
+        sr1 = INT16_MAX;
+       } else if(sr1 < INT16_MIN){
+        sr1 = INT16_MIN;
+       }
+      if(sr2 > INT16_MAX){
+        sr2 = INT16_MAX;
+      }
+         else if(sr2 < INT16_MIN){
+          sr2 = INT16_MIN;
+         }
+      if(sr3 > INT16_MAX){
+        sr3 = INT16_MAX;
+       }else if(sr3 < INT16_MIN){
+        sr3 = INT16_MIN;
+       }
+      if(sr4 > INT16_MAX){
+        sr4 = INT16_MAX; 
+      }else if(sr4 < INT16_MIN){
+        sr4 = INT16_MIN;
+      }
 
       int64_t sr = (static_cast<int64_t>(sr1) << 48) |
                    ((static_cast<int64_t>(sr2) & 0xFFFFLL) << 32) |
@@ -1090,10 +1031,28 @@ static std::string decode_fclass(uint16_t res) {
       int32_t sr3 = static_cast<int32_t>(sa3) * static_cast<int32_t>(sb3);
       int32_t sr4 = static_cast<int32_t>(sa4) * static_cast<int32_t>(sb4);
       
-      if (sr1 > INT16_MAX) sr1 = INT16_MAX; else if (sr1 < INT16_MIN) sr1 = INT16_MIN;
-      if (sr2 > INT16_MAX) sr2 = INT16_MAX; else if (sr2 < INT16_MIN) sr2 = INT16_MIN;
-      if (sr3 > INT16_MAX) sr3 = INT16_MAX; else if (sr3 < INT16_MIN) sr3 = INT16_MIN;
-      if (sr4 > INT16_MAX) sr4 = INT16_MAX; else if (sr4 < INT16_MIN) sr4 = INT16_MIN;
+      if(sr1 > INT16_MAX){
+        sr1 = INT16_MAX;
+       } else if(sr1 < INT16_MIN){
+        sr1 = INT16_MIN;
+       }
+      if(sr2 > INT16_MAX){
+        sr2 = INT16_MAX;
+      }
+         else if(sr2 < INT16_MIN){
+          sr2 = INT16_MIN;
+         }
+      if(sr3 > INT16_MAX){
+        sr3 = INT16_MAX;
+       }else if(sr3 < INT16_MIN){
+        sr3 = INT16_MIN;
+       }
+      if(sr4 > INT16_MAX){
+        sr4 = INT16_MAX; 
+      }else if(sr4 < INT16_MIN){
+        sr4 = INT16_MIN;
+      }
+
 
       int64_t sr = (static_cast<int64_t>(sr1) << 48) |
                    ((static_cast<int64_t>(sr2) & 0xFFFFLL) << 32) |
@@ -1129,10 +1088,28 @@ static std::string decode_fclass(uint16_t res) {
       int32_t sr3 = (sb3 == 0) ? 0 : (static_cast<int32_t>(sa3) / static_cast<int32_t>(sb3));
       int32_t sr4 = (sb4 == 0) ? 0 : (static_cast<int32_t>(sa4) / static_cast<int32_t>(sb4));
       
-      if (sr1 > INT16_MAX) sr1 = INT16_MAX; else if (sr1 < INT16_MIN) sr1 = INT16_MIN;
-      if (sr2 > INT16_MAX) sr2 = INT16_MAX; else if (sr2 < INT16_MIN) sr2 = INT16_MIN;
-      if (sr3 > INT16_MAX) sr3 = INT16_MAX; else if (sr3 < INT16_MIN) sr3 = INT16_MIN;
-      if (sr4 > INT16_MAX) sr4 = INT16_MAX; else if (sr4 < INT16_MIN) sr4 = INT16_MIN;
+      if(sr1 > INT16_MAX){
+        sr1 = INT16_MAX;
+       } else if(sr1 < INT16_MIN){
+        sr1 = INT16_MIN;
+       }
+      if(sr2 > INT16_MAX){
+        sr2 = INT16_MAX;
+      }
+         else if(sr2 < INT16_MIN){
+          sr2 = INT16_MIN;
+         }
+      if(sr3 > INT16_MAX){
+        sr3 = INT16_MAX;
+       }else if(sr3 < INT16_MIN){
+        sr3 = INT16_MIN;
+       }
+      if(sr4 > INT16_MAX){
+        sr4 = INT16_MAX; 
+      }else if(sr4 < INT16_MIN){
+        sr4 = INT16_MIN;
+      }
+
 
       int64_t sr = (static_cast<int64_t>(sr1) << 48) |
                    ((static_cast<int64_t>(sr2) & 0xFFFFLL) << 32) |
@@ -1164,10 +1141,28 @@ static std::string decode_fclass(uint16_t res) {
       int32_t sr3 = (sb3 == 0) ? 0 : (static_cast<int32_t>(sa3) % static_cast<int32_t>(sb3));
       int32_t sr4 = (sb4 == 0) ? 0 : (static_cast<int32_t>(sa4) % static_cast<int32_t>(sb4));
       
-      if (sr1 > INT16_MAX) sr1 = INT16_MAX; else if (sr1 < INT16_MIN) sr1 = INT16_MIN;
-      if (sr2 > INT16_MAX) sr2 = INT16_MAX; else if (sr2 < INT16_MIN) sr2 = INT16_MIN;
-      if (sr3 > INT16_MAX) sr3 = INT16_MAX; else if (sr3 < INT16_MIN) sr3 = INT16_MIN;
-      if (sr4 > INT16_MAX) sr4 = INT16_MAX; else if (sr4 < INT16_MIN) sr4 = INT16_MIN;
+      if(sr1 > INT16_MAX){
+        sr1 = INT16_MAX;
+       } else if(sr1 < INT16_MIN){
+        sr1 = INT16_MIN;
+       }
+      if(sr2 > INT16_MAX){
+        sr2 = INT16_MAX;
+      }
+         else if(sr2 < INT16_MIN){
+          sr2 = INT16_MIN;
+         }
+      if(sr3 > INT16_MAX){
+        sr3 = INT16_MAX;
+       }else if(sr3 < INT16_MIN){
+        sr3 = INT16_MIN;
+       }
+      if(sr4 > INT16_MAX){
+        sr4 = INT16_MAX; 
+      }else if(sr4 < INT16_MIN){
+        sr4 = INT16_MIN;
+      }
+
 
       int64_t sr = (static_cast<int64_t>(sr1) << 48) |
                    ((static_cast<int64_t>(sr2) & 0xFFFFLL) << 32) |
@@ -1224,14 +1219,47 @@ static std::string decode_fclass(uint16_t res) {
       int16_t sr8 = static_cast<int16_t>(sa8) + static_cast<int16_t>(sb8);
 
       // Saturate results to 8-bit range
-      if (sr1 > INT8_MAX) sr1 = INT8_MAX; else if (sr1 < INT8_MIN) sr1 = INT8_MIN;
-      if (sr2 > INT8_MAX) sr2 = INT8_MAX; else if (sr2 < INT8_MIN) sr2 = INT8_MIN;
-      if (sr3 > INT8_MAX) sr3 = INT8_MAX; else if (sr3 < INT8_MIN) sr3 = INT8_MIN;
-      if (sr4 > INT8_MAX) sr4 = INT8_MAX; else if (sr4 < INT8_MIN) sr4 = INT8_MIN;
-      if (sr5 > INT8_MAX) sr5 = INT8_MAX; else if (sr5 < INT8_MIN) sr5 = INT8_MIN;
-      if (sr6 > INT8_MAX) sr6 = INT8_MAX; else if (sr6 < INT8_MIN) sr6 = INT8_MIN;
-      if (sr7 > INT8_MAX) sr7 = INT8_MAX; else if (sr7 < INT8_MIN) sr7 = INT8_MIN;
-      if (sr8 > INT8_MAX) sr8 = INT8_MAX; else if (sr8 < INT8_MIN) sr8 = INT8_MIN;
+      if(sr1 > INT8_MAX){
+        sr1 = INT8_MAX;
+       }else if (sr1 < INT8_MIN){
+        sr1 = INT8_MIN;
+       }
+      if(sr2 > INT8_MAX){
+        sr2 = INT8_MAX; 
+      }else if(sr2 < INT8_MIN){
+        sr2 = INT8_MIN;
+      }
+      if(sr3 > INT8_MAX){
+        sr3 = INT8_MAX; 
+      }else if(sr3 < INT8_MIN){
+      sr3 = INT8_MIN;
+      } 
+      if(sr4 > INT8_MAX){
+        sr4 = INT8_MAX;
+       }else if(sr4 < INT8_MIN){
+        sr4 = INT8_MIN;
+       }
+      if(sr5 > INT8_MAX){
+        sr5 = INT8_MAX; 
+      }else if (sr5 < INT8_MIN){
+        sr5 = INT8_MIN;
+      }
+      if(sr6 > INT8_MAX){
+        sr6 = INT8_MAX; 
+      }else if (sr6 < INT8_MIN){
+        sr6 = INT8_MIN;
+      }
+      if(sr7 > INT8_MAX){
+        sr7 = INT8_MAX;
+       }else if (sr7 < INT8_MIN){
+        
+        sr7 = INT8_MIN;
+       }
+      if(sr8 > INT8_MAX){
+        sr8 = INT8_MAX; 
+      }else if (sr8 < INT8_MIN){
+        sr8 = INT8_MIN;
+      }
 
       // Pack results back into int64_t
       int64_t sr = (static_cast<int64_t>(sr1) << 56) |
@@ -1286,15 +1314,47 @@ static std::string decode_fclass(uint16_t res) {
       int16_t sr6 = static_cast<int16_t>(sa6) - static_cast<int16_t>(sb6);
       int16_t sr7 = static_cast<int16_t>(sa7) - static_cast<int16_t>(sb7);
       int16_t sr8 = static_cast<int16_t>(sa8) - static_cast<int16_t>(sb8);
-
-      if (sr1 > INT8_MAX) sr1 = INT8_MAX; else if (sr1 < INT8_MIN) sr1 = INT8_MIN;
-      if (sr2 > INT8_MAX) sr2 = INT8_MAX; else if (sr2 < INT8_MIN) sr2 = INT8_MIN;
-      if (sr3 > INT8_MAX) sr3 = INT8_MAX; else if (sr3 < INT8_MIN) sr3 = INT8_MIN;
-      if (sr4 > INT8_MAX) sr4 = INT8_MAX; else if (sr4 < INT8_MIN) sr4 = INT8_MIN;
-      if (sr5 > INT8_MAX) sr5 = INT8_MAX; else if (sr5 < INT8_MIN) sr5 = INT8_MIN;
-      if (sr6 > INT8_MAX) sr6 = INT8_MAX; else if (sr6 < INT8_MIN) sr6 = INT8_MIN;
-      if (sr7 > INT8_MAX) sr7 = INT8_MAX; else if (sr7 < INT8_MIN) sr7 = INT8_MIN;
-      if (sr8 > INT8_MAX) sr8 = INT8_MAX; else if (sr8 < INT8_MIN) sr8 = INT8_MIN;
+      if(sr1 > INT8_MAX){
+        sr1 = INT8_MAX;
+       }else if (sr1 < INT8_MIN){
+        sr1 = INT8_MIN;
+       }
+      if(sr2 > INT8_MAX){
+        sr2 = INT8_MAX; 
+      }else if(sr2 < INT8_MIN){
+        sr2 = INT8_MIN;
+      }
+      if(sr3 > INT8_MAX){
+        sr3 = INT8_MAX; 
+      }else if(sr3 < INT8_MIN){
+      sr3 = INT8_MIN;
+      } 
+      if(sr4 > INT8_MAX){
+        sr4 = INT8_MAX;
+       }else if(sr4 < INT8_MIN){
+        sr4 = INT8_MIN;
+       }
+      if(sr5 > INT8_MAX){
+        sr5 = INT8_MAX; 
+      }else if (sr5 < INT8_MIN){
+        sr5 = INT8_MIN;
+      }
+      if(sr6 > INT8_MAX){
+        sr6 = INT8_MAX; 
+      }else if (sr6 < INT8_MIN){
+        sr6 = INT8_MIN;
+      }
+      if(sr7 > INT8_MAX){
+        sr7 = INT8_MAX;
+       }else if (sr7 < INT8_MIN){
+        
+        sr7 = INT8_MIN;
+       }
+      if(sr8 > INT8_MAX){
+        sr8 = INT8_MAX; 
+      }else if (sr8 < INT8_MIN){
+        sr8 = INT8_MIN;
+      }
 
       int64_t sr = (static_cast<int64_t>(sr1) << 56) |
                    ((static_cast<int64_t>(sr2) & 0xFFLL) << 48) |
@@ -1349,14 +1409,47 @@ static std::string decode_fclass(uint16_t res) {
       int16_t sr7 = static_cast<int16_t>(sa7) * static_cast<int16_t>(sb7);
       int16_t sr8 = static_cast<int16_t>(sa8) * static_cast<int16_t>(sb8);
 
-      if (sr1 > INT8_MAX) sr1 = INT8_MAX; else if (sr1 < INT8_MIN) sr1 = INT8_MIN;
-      if (sr2 > INT8_MAX) sr2 = INT8_MAX; else if (sr2 < INT8_MIN) sr2 = INT8_MIN;
-      if (sr3 > INT8_MAX) sr3 = INT8_MAX; else if (sr3 < INT8_MIN) sr3 = INT8_MIN;
-      if (sr4 > INT8_MAX) sr4 = INT8_MAX; else if (sr4 < INT8_MIN) sr4 = INT8_MIN;
-      if (sr5 > INT8_MAX) sr5 = INT8_MAX; else if (sr5 < INT8_MIN) sr5 = INT8_MIN;
-      if (sr6 > INT8_MAX) sr6 = INT8_MAX; else if (sr6 < INT8_MIN) sr6 = INT8_MIN;
-      if (sr7 > INT8_MAX) sr7 = INT8_MAX; else if (sr7 < INT8_MIN) sr7 = INT8_MIN;
-      if (sr8 > INT8_MAX) sr8 = INT8_MAX; else if (sr8 < INT8_MIN) sr8 = INT8_MIN;
+      if(sr1 > INT8_MAX){
+        sr1 = INT8_MAX;
+       }else if (sr1 < INT8_MIN){
+        sr1 = INT8_MIN;
+       }
+      if(sr2 > INT8_MAX){
+        sr2 = INT8_MAX; 
+      }else if(sr2 < INT8_MIN){
+        sr2 = INT8_MIN;
+      }
+      if(sr3 > INT8_MAX){
+        sr3 = INT8_MAX; 
+      }else if(sr3 < INT8_MIN){
+      sr3 = INT8_MIN;
+      } 
+      if(sr4 > INT8_MAX){
+        sr4 = INT8_MAX;
+       }else if(sr4 < INT8_MIN){
+        sr4 = INT8_MIN;
+       }
+      if(sr5 > INT8_MAX){
+        sr5 = INT8_MAX; 
+      }else if (sr5 < INT8_MIN){
+        sr5 = INT8_MIN;
+      }
+      if(sr6 > INT8_MAX){
+        sr6 = INT8_MAX; 
+      }else if (sr6 < INT8_MIN){
+        sr6 = INT8_MIN;
+      }
+      if(sr7 > INT8_MAX){
+        sr7 = INT8_MAX;
+       }else if (sr7 < INT8_MIN){
+        
+        sr7 = INT8_MIN;
+       }
+      if(sr8 > INT8_MAX){
+        sr8 = INT8_MAX; 
+      }else if (sr8 < INT8_MIN){
+        sr8 = INT8_MIN;
+      }
 
       int64_t sr = (static_cast<int64_t>(sr1) << 56) |
                    ((static_cast<int64_t>(sr2) & 0xFFLL) << 48) |
@@ -1369,7 +1462,7 @@ static std::string decode_fclass(uint16_t res) {
       return {sr, false};
     }
     case AluOp::kLoad_simd8:{
-        // As requested, left empty
+        
         return {0, false};
     }
     case AluOp::kDiv_simd8:{
@@ -1416,14 +1509,47 @@ static std::string decode_fclass(uint16_t res) {
       int16_t sr7 = (sb7 == 0) ? 0 : (static_cast<int16_t>(sa7) / static_cast<int16_t>(sb7));
       int16_t sr8 = (sb8 == 0) ? 0 : (static_cast<int16_t>(sa8) / static_cast<int16_t>(sb8));
 
-      if (sr1 > INT8_MAX) sr1 = INT8_MAX; else if (sr1 < INT8_MIN) sr1 = INT8_MIN;
-      if (sr2 > INT8_MAX) sr2 = INT8_MAX; else if (sr2 < INT8_MIN) sr2 = INT8_MIN;
-      if (sr3 > INT8_MAX) sr3 = INT8_MAX; else if (sr3 < INT8_MIN) sr3 = INT8_MIN;
-      if (sr4 > INT8_MAX) sr4 = INT8_MAX; else if (sr4 < INT8_MIN) sr4 = INT8_MIN;
-      if (sr5 > INT8_MAX) sr5 = INT8_MAX; else if (sr5 < INT8_MIN) sr5 = INT8_MIN;
-      if (sr6 > INT8_MAX) sr6 = INT8_MAX; else if (sr6 < INT8_MIN) sr6 = INT8_MIN;
-      if (sr7 > INT8_MAX) sr7 = INT8_MAX; else if (sr7 < INT8_MIN) sr7 = INT8_MIN;
-      if (sr8 > INT8_MAX) sr8 = INT8_MAX; else if (sr8 < INT8_MIN) sr8 = INT8_MIN;
+      if(sr1 > INT8_MAX){
+        sr1 = INT8_MAX;
+       }else if (sr1 < INT8_MIN){
+        sr1 = INT8_MIN;
+       }
+      if(sr2 > INT8_MAX){
+        sr2 = INT8_MAX; 
+      }else if(sr2 < INT8_MIN){
+        sr2 = INT8_MIN;
+      }
+      if(sr3 > INT8_MAX){
+        sr3 = INT8_MAX; 
+      }else if(sr3 < INT8_MIN){
+      sr3 = INT8_MIN;
+      } 
+      if(sr4 > INT8_MAX){
+        sr4 = INT8_MAX;
+       }else if(sr4 < INT8_MIN){
+        sr4 = INT8_MIN;
+       }
+      if(sr5 > INT8_MAX){
+        sr5 = INT8_MAX; 
+      }else if (sr5 < INT8_MIN){
+        sr5 = INT8_MIN;
+      }
+      if(sr6 > INT8_MAX){
+        sr6 = INT8_MAX; 
+      }else if (sr6 < INT8_MIN){
+        sr6 = INT8_MIN;
+      }
+      if(sr7 > INT8_MAX){
+        sr7 = INT8_MAX;
+       }else if (sr7 < INT8_MIN){
+        
+        sr7 = INT8_MIN;
+       }
+      if(sr8 > INT8_MAX){
+        sr8 = INT8_MAX; 
+      }else if (sr8 < INT8_MIN){
+        sr8 = INT8_MIN;
+      }
 
       int64_t sr = (static_cast<int64_t>(sr1) << 56) |
                    ((static_cast<int64_t>(sr2) & 0xFFLL) << 48) |
@@ -1479,14 +1605,47 @@ static std::string decode_fclass(uint16_t res) {
       int16_t sr7 = (sb7 == 0) ? 0 : (static_cast<int16_t>(sa7) % static_cast<int16_t>(sb7));
       int16_t sr8 = (sb8 == 0) ? 0 : (static_cast<int16_t>(sa8) % static_cast<int16_t>(sb8));
 
-      if (sr1 > INT8_MAX) sr1 = INT8_MAX; else if (sr1 < INT8_MIN) sr1 = INT8_MIN;
-      if (sr2 > INT8_MAX) sr2 = INT8_MAX; else if (sr2 < INT8_MIN) sr2 = INT8_MIN;
-      if (sr3 > INT8_MAX) sr3 = INT8_MAX; else if (sr3 < INT8_MIN) sr3 = INT8_MIN;
-      if (sr4 > INT8_MAX) sr4 = INT8_MAX; else if (sr4 < INT8_MIN) sr4 = INT8_MIN;
-      if (sr5 > INT8_MAX) sr5 = INT8_MAX; else if (sr5 < INT8_MIN) sr5 = INT8_MIN;
-      if (sr6 > INT8_MAX) sr6 = INT8_MAX; else if (sr6 < INT8_MIN) sr6 = INT8_MIN;
-      if (sr7 > INT8_MAX) sr7 = INT8_MAX; else if (sr7 < INT8_MIN) sr7 = INT8_MIN;
-      if (sr8 > INT8_MAX) sr8 = INT8_MAX; else if (sr8 < INT8_MIN) sr8 = INT8_MIN;
+      if(sr1 > INT8_MAX){
+        sr1 = INT8_MAX;
+       }else if (sr1 < INT8_MIN){
+        sr1 = INT8_MIN;
+       }
+      if(sr2 > INT8_MAX){
+        sr2 = INT8_MAX; 
+      }else if(sr2 < INT8_MIN){
+        sr2 = INT8_MIN;
+      }
+      if(sr3 > INT8_MAX){
+        sr3 = INT8_MAX; 
+      }else if(sr3 < INT8_MIN){
+      sr3 = INT8_MIN;
+      } 
+      if(sr4 > INT8_MAX){
+        sr4 = INT8_MAX;
+       }else if(sr4 < INT8_MIN){
+        sr4 = INT8_MIN;
+       }
+      if(sr5 > INT8_MAX){
+        sr5 = INT8_MAX; 
+      }else if (sr5 < INT8_MIN){
+        sr5 = INT8_MIN;
+      }
+      if(sr6 > INT8_MAX){
+        sr6 = INT8_MAX; 
+      }else if (sr6 < INT8_MIN){
+        sr6 = INT8_MIN;
+      }
+      if(sr7 > INT8_MAX){
+        sr7 = INT8_MAX;
+       }else if (sr7 < INT8_MIN){
+        
+        sr7 = INT8_MIN;
+       }
+      if(sr8 > INT8_MAX){
+        sr8 = INT8_MAX; 
+      }else if (sr8 < INT8_MIN){
+        sr8 = INT8_MIN;
+      }
 
       int64_t sr = (static_cast<int64_t>(sr1) << 56) |
                    ((static_cast<int64_t>(sr2) & 0xFFLL) << 48) |
@@ -1500,36 +1659,48 @@ static std::string decode_fclass(uint16_t res) {
     }
     case AluOp::kAdd_simd4: {
     int64_t res = 0;
-    for (int i = 0; i < 16; i++) {
+    for(int i = 0; i < 16; i++){
         int64_t laneA = (a >> (i * 4)) & 0xF;
         int64_t laneB = (b >> (i * 4)) & 0xF;
         int64_t sum = laneA + laneB;
-        if (sum > 15) sum = 7; 
-        else if(sum < -8) sum = -8;  // saturate
+        if(sum > 15){
+           sum = 7; 
+        }
+        else if(sum < -8) {
+          sum = -8;  // saturate
+        }
         res |= (sum & 0xF) << (i * 4);
     }
     return {res,false};
     }
     case AluOp::kSub_simd4: {
      int64_t res = 0;
-    for (int i = 0; i < 16; i++) {
+    for(int i = 0; i < 16; i++){
         int64_t laneA = (a >> (i * 4)) & 0xF;
         int64_t laneB = (b >> (i * 4)) & 0xF;
         int64_t sum = laneA - laneB;
-        if (sum > 7) sum = 7;  
-        else if(sum < -8) sum = -8; // saturate
+        if(sum > 7){
+          sum = 7; 
+        } 
+        else if(sum < -8){
+          sum = -8; // saturate
+        }
         res |= (sum & 0xF) << (i * 4);
     }
     return {res,false};
     }
     case AluOp::kMul_simd4: {
      int64_t res = 0;
-    for (int i = 0; i < 16; i++) {
+    for(int i = 0; i < 16; i++){
         int64_t laneA = (a >> (i * 4)) & 0xF;
         int64_t laneB = (b >> (i * 4)) & 0xF;
         int64_t sum = laneA * laneB;
-        if (sum > 7) sum = 7; 
-        else if(sum < -8) sum = -8;  // saturate
+        if(sum > 7){
+          sum = 7; 
+        }
+        else if(sum < -8){
+          sum = -8;  // saturate
+        }
         res |= (sum & 0xF) << (i * 4);
     }
     return {res,false};
@@ -1541,60 +1712,80 @@ static std::string decode_fclass(uint16_t res) {
     }
     case AluOp::kDiv_simd4: {
       int64_t res = 0;
-     for (int i = 0; i < 16; i++) {
+     for(int i = 0; i < 16; i++){
         int64_t laneA = (a >> (i * 4)) & 0xF;
         int64_t laneB = (b >> (i * 4)) & 0xF;
         int64_t sum = laneA / laneB;
-        if (sum > 7) sum = 7; 
-        else if(sum < -8) sum = -8;  // saturate
+        if(sum > 7){
+          sum = 7;
+        } 
+        else if(sum < -8){
+          sum = -8;  // saturate
+        }
         res |= (sum & 0xF) << (i * 4);
     }
     return {res,false};
     }
     case AluOp::kRem_simd4: {
      int64_t res = 0;
-     for (int i = 0; i < 16; i++) {
+     for(int i = 0; i < 16; i++){
         int64_t laneA = (a >> (i * 4)) & 0xF;
         int64_t laneB = (b >> (i * 4)) & 0xF;
         int64_t sum = laneA % laneB;
-        if (sum > 7) sum = 7; 
-        else if(sum < -8) sum = -8; // saturate
+        if(sum > 7){
+          sum = 7; 
+        }
+        else if(sum < -8){
+          sum = -8; // saturate
+        }
         res |= (sum & 0xF) << (i * 4);
     }
     return {res,false};
     }
     case AluOp::kAdd_simd2: {
      int64_t res = 0;
-    for (int i = 0; i < 32; i++) {
+    for(int i = 0; i < 32; i++){
         int64_t laneA = (a >> (i * 2)) & 0x3;
         int64_t laneB = (b >> (i * 2)) & 0x3;
         int64_t sum = laneA + laneB;
-        if (sum > 1) sum = 1;
-        else if(sum < -2) sum =-2;  // saturate
+        if(sum > 1){
+           sum = 1;
+        }
+        else if(sum < -2){
+          sum =-2;  // saturate
+        }
         res |= (sum & 0x3) << (i * 2);
     }
     return {res,false};
     }
     case AluOp::kSub_simd2: {
      int64_t res = 0;
-    for (int i = 0; i < 32; i++) {
+    for(int i = 0; i < 32; i++){
         int64_t laneA = (a >> (i * 2)) & 0x3;
         int64_t laneB = (b >> (i * 2)) & 0x3;
         int64_t sum = laneA - laneB;
-        if (sum > 1) sum = 1;  // saturate
-        else if(sum < -2) sum =-2;
+        if(sum > 1){
+          sum = 1;  // saturate
+        }
+        else if(sum < -2){
+          sum =-2;
+        }
         res |= (sum & 0x3) << (i * 2);
     }
     return {res,false};
     }
     case AluOp::kMul_simd2: {
      int64_t res = 0;
-    for (int i = 0; i < 32; i++) {
+    for(int i = 0; i < 32; i++){
         int64_t laneA = (a >> (i * 2)) & 0x3;
         int64_t laneB = (b >> (i * 2)) & 0x3;
         int64_t sum = laneA * laneB;
-        if (sum > 1) sum = 1;  // saturate
-        else if(sum < -2) sum =-2;
+        if(sum > 1){
+          sum = 1;  // saturate
+        }
+        else if(sum < -2){
+          sum =-2;
+        }
         res |= (sum & 0x3) << (i * 2);
     }
     return {res,false};
@@ -1605,24 +1796,32 @@ static std::string decode_fclass(uint16_t res) {
     }
     case AluOp::kDiv_simd2: {
      int64_t res = 0;
-    for (int i = 0; i < 32; i++) {
+    for(int i = 0; i < 32; i++){
         int64_t laneA = (a >> (i * 2)) & 0x3;
         int64_t laneB = (b >> (i * 2)) & 0x3;
         int64_t sum = laneA / laneB;
-        if (sum > 1) sum = 1;  // saturate
-        else if(sum < -2) sum =-2;
+        if(sum > 1){
+          sum = 1;  // saturate
+        }
+        else if(sum < -2){
+          sum =-2;
+        }
         res |= (sum & 0x3) << (i * 2);
     }
     return {res,false};
     }
     case AluOp::kRem_simd2: {
      int64_t res = 0;
-    for (int i = 0; i < 32; i++) {
+    for(int i = 0; i < 32; i++){
         int64_t laneA = (a >> (i * 2)) & 0x3;
         int64_t laneB = (b >> (i * 2)) & 0x3;
         int64_t sum = laneA % laneB;
-        if (sum > 1) sum = 1;  // saturate
-        else if(sum < -2) sum =-2;
+        if(sum > 1) ={
+          sum = 1;  // saturate
+        }
+        else if(sum < -2){
+          sum =-2;
+        }
         res |= (sum & 0x3) << (i * 2);
     }
     return {res,false};
@@ -1651,8 +1850,8 @@ static std::string decode_fclass(uint16_t res) {
       static int64_t prev_b = 0;
       static int64_t prev_result = 0;
       static bool cache_valid = false;
-      if (cache_valid && 
-          ((a == prev_a && b == prev_b) || (a == prev_b && b == prev_a))) {
+      if(cache_valid && 
+          ((a == prev_a && b == prev_b)||(a == prev_b && b == prev_a))){
           return {prev_result, false};
       }
       int32_t sa_upper = static_cast<int32_t>(a >> 32);
@@ -1676,7 +1875,7 @@ static std::string decode_fclass(uint16_t res) {
       static int64_t prev_b = 0;
       static int64_t prev_result = 0;
       static bool cache_valid = false;
-      if (cache_valid && (a == prev_a && b == prev_b)) {
+      if(cache_valid && (a == prev_a && b == prev_b)){
           return {prev_result, false};
       }
       int32_t sa_upper = static_cast<int32_t>(a >> 32);
@@ -1706,9 +1905,9 @@ static std::string decode_fclass(uint16_t res) {
       static int64_t prev_result = 0;
       static bool cache_valid = false;
 
-      // Check cache (commutative property: a*b == b*a)
-      if (cache_valid && 
-          ((a == prev_a && b == prev_b) || (a == prev_b && b == prev_a))) {
+      
+      if(cache_valid && 
+          ((a == prev_a && b == prev_b) || (a == prev_b && b == prev_a))){
           return {prev_result, false};
       }
 
@@ -1733,7 +1932,7 @@ static std::string decode_fclass(uint16_t res) {
       static int64_t prev_b = 0;
       static int64_t prev_result = 0;
       static bool cache_valid = false;
-      if (cache_valid && (a == prev_a && b == prev_b)) {
+      if(cache_valid && (a == prev_a && b == prev_b)){
           return {prev_result, false};
       }
       int32_t sa_upper = static_cast<int32_t>(a >> 32);
@@ -1742,16 +1941,16 @@ static std::string decode_fclass(uint16_t res) {
       int32_t sb_lower = static_cast<int32_t>(b & 0xFFFFFFFFLL);
       int64_t sr_upper_val, sr_lower_val;
 
-      if (sb_upper == 0) {
+      if(sb_upper == 0){
           sr_upper_val = 0; 
-      } else {
+      }else{
           sr_upper_val = static_cast<int64_t>(sa_upper) / static_cast<int64_t>(sb_upper);
       }
       
-      if (sb_lower == 0) {
+      if(sb_lower == 0){
          
           sr_lower_val = 0; 
-      } else {
+      }else{
           sr_lower_val = static_cast<int64_t>(sa_lower) / static_cast<int64_t>(sb_lower);
       }
       int64_t sr_upper = static_cast<int64_t>(static_cast<int32_t>(sr_upper_val));
@@ -1809,7 +2008,7 @@ static std::string decode_fclass(uint16_t res) {
     case AluOp::kSltu: {
       return {static_cast<uint64_t>(a < b), false};
     }
-    // === BEGIN QALU INSTRUCTION CASES ===
+    // Quantum ALU
      case AluOp::kQAlloc_A: 
         //  std::cout << qalloc_a(a,b) << "\n";
          return {qalloc_a(a, b), false};
@@ -1831,7 +2030,7 @@ static std::string decode_fclass(uint16_t res) {
          return {qnorma(a, b), false};
      case AluOp::kQNormB:
          return {qnormb(a, b), false};
-     // === END QALU INSTRUCTION CASES ===
+     
     default: return {0, false};
   }
 }
@@ -2076,46 +2275,46 @@ static std::string decode_fclass(uint16_t res) {
       break;
     }
     case AluOp::FADD_BF16: {
-        // Unpack 4x BF16 from ina (fs1) and inb (fs2)
+        
         uint16_t fs1_vals[4];
         uint16_t fs2_vals[4];
-        for (int i = 0; i < 4; ++i) {
+        for(int i = 0; i < 4; ++i){
             fs1_vals[i] = (uint16_t)(ina >> (i * 16));
             fs2_vals[i] = (uint16_t)(inb >> (i * 16));
         }
 
         float results_fp32[4];
-        // Convert, Compute, Convert back
-        for (int i = 0; i < 4; ++i) {
+        
+        for(int i = 0; i < 4; ++i){
             float f1 = bfloat16_to_float(fs1_vals[i]);
             float f2 = bfloat16_to_float(fs2_vals[i]);
             results_fp32[i] = f1 + f2;
         }
 
-        // Pack results back into a uint64_t
+        
         uint64_t result_64 = 0;
-        for (int i = 0; i < 4; ++i) {
+        for(int i = 0; i < 4; ++i){
             result_64 |= (uint64_t)float_to_bfloat16(results_fp32[i]) << (i * 16);
         }
-        std::fesetround(original_rm); // Restore rounding mode
-        return {result_64, fcsr}; // Return packed result, fcsr might need adjustment later
-    } // No break needed after return
+        std::fesetround(original_rm); 
+        return {result_64, fcsr}; 
+    }
 
     case AluOp::FSUB_BF16: {
         uint16_t fs1_vals[4];
         uint16_t fs2_vals[4];
-        for (int i = 0; i < 4; ++i) {
+        for(int i = 0; i < 4; ++i){
             fs1_vals[i] = (uint16_t)(ina >> (i * 16));
             fs2_vals[i] = (uint16_t)(inb >> (i * 16));
         }
         float results_fp32[4];
-        for (int i = 0; i < 4; ++i) {
+        for(int i = 0; i < 4; ++i){
             float f1 = bfloat16_to_float(fs1_vals[i]);
             float f2 = bfloat16_to_float(fs2_vals[i]);
             results_fp32[i] = f1 - f2;
         }
         uint64_t result_64 = 0;
-        for (int i = 0; i < 4; ++i) {
+        for(int i = 0; i < 4; ++i){
             result_64 |= (uint64_t)float_to_bfloat16(results_fp32[i]) << (i * 16);
         }
         std::fesetround(original_rm);
@@ -2125,18 +2324,18 @@ static std::string decode_fclass(uint16_t res) {
     case AluOp::FMUL_BF16: {
         uint16_t fs1_vals[4];
         uint16_t fs2_vals[4];
-        for (int i = 0; i < 4; ++i) {
+        for(int i = 0; i < 4; ++i){
             fs1_vals[i] = (uint16_t)(ina >> (i * 16));
             fs2_vals[i] = (uint16_t)(inb >> (i * 16));
         }
         float results_fp32[4];
-        for (int i = 0; i < 4; ++i) {
+        for(int i = 0; i < 4; ++i){
             float f1 = bfloat16_to_float(fs1_vals[i]);
             float f2 = bfloat16_to_float(fs2_vals[i]);
             results_fp32[i] = f1 * f2;
         }
         uint64_t result_64 = 0;
-        for (int i = 0; i < 4; ++i) {
+        for(int i = 0; i < 4; ++i){
             result_64 |= (uint64_t)float_to_bfloat16(results_fp32[i]) << (i * 16);
         }
         std::fesetround(original_rm);
@@ -2146,19 +2345,19 @@ static std::string decode_fclass(uint16_t res) {
     case AluOp::FMAX_BF16: {
         uint16_t fs1_vals[4];
         uint16_t fs2_vals[4];
-        for (int i = 0; i < 4; ++i) {
+        for(int i = 0; i < 4; ++i){
             fs1_vals[i] = (uint16_t)(ina >> (i * 16));
             fs2_vals[i] = (uint16_t)(inb >> (i * 16));
         }
         float results_fp32[4];
-        for (int i = 0; i < 4; ++i) {
+        for(int i = 0; i < 4; ++i){
             float f1 = bfloat16_to_float(fs1_vals[i]);
             float f2 = bfloat16_to_float(fs2_vals[i]);
-            // Handle NaNs according to standard fmax behavior if necessary
-            results_fp32[i] = (f1 > f2) ? f1 : f2; // Simplified max
+            
+            results_fp32[i] = (f1 > f2) ? f1 : f2; 
         }
         uint64_t result_64 = 0;
-        for (int i = 0; i < 4; ++i) {
+        for(int i = 0; i < 4; ++i){
             result_64 |= (uint64_t)float_to_bfloat16(results_fp32[i]) << (i * 16);
         }
         std::fesetround(original_rm);
@@ -2169,7 +2368,7 @@ static std::string decode_fclass(uint16_t res) {
 
 case AluOp::FADD_FP16: {
     uint64_t result_64 = 0;
-    for (int i = 0; i < 4; ++i) {
+    for(int i = 0; i < 4; ++i){
         const uint16_t a_h = fp16_lane(ina, i);
         const uint16_t b_h = fp16_lane(inb, i);
         const float f1 = float16_to_float(a_h);
@@ -2184,7 +2383,7 @@ case AluOp::FADD_FP16: {
 
 case AluOp::FSUB_FP16: {
     uint64_t result_64 = 0;
-    for (int i = 0; i < 4; ++i) {
+    for(int i = 0; i < 4; ++i){
         const uint16_t a_h = fp16_lane(ina, i);
         const uint16_t b_h = fp16_lane(inb, i);
         const float f1 = float16_to_float(a_h);
@@ -2199,7 +2398,7 @@ case AluOp::FSUB_FP16: {
 
 case AluOp::FMUL_FP16: {
     uint64_t result_64 = 0;
-    for (int i = 0; i < 4; ++i) {
+    for(int i = 0; i < 4; ++i){
         const uint16_t a_h = fp16_lane(ina, i);
         const uint16_t b_h = fp16_lane(inb, i);
         const float f1 = float16_to_float(a_h);
@@ -2214,12 +2413,12 @@ case AluOp::FMUL_FP16: {
 
 case AluOp::FMAX_FP16: {
     uint64_t result_64 = 0;
-    for (int i = 0; i < 4; ++i) {
+    for(int i = 0; i < 4; ++i){
         const uint16_t a_h = fp16_lane(ina, i);
         const uint16_t b_h = fp16_lane(inb, i);
         const float f1 = float16_to_float(a_h);
         const float f2 = float16_to_float(b_h);
-        const float rf = std::fmax(f1, f2);  // correct NaN handling
+        const float rf = std::fmax(f1, f2);  
         const uint16_t r_h = float_to_float16(rf);
         fp16_set_lane(result_64, i, r_h);
     }
@@ -2229,31 +2428,33 @@ case AluOp::FMAX_FP16: {
 
 case AluOp::FDOT_FP16: {
     float acc = 0.0f;
-    for (int i = 0; i < 4; ++i) {
+    for(int i = 0; i < 4; ++i){
         const uint16_t a_h = fp16_lane(ina, i);
         const uint16_t b_h = fp16_lane(inb, i);
         const float f1 = float16_to_float(a_h);
         const float f2 = float16_to_float(b_h);
-        acc = std::fma(f1, f2, acc); // accurate accumulation
+        acc = std::fma(f1, f2, acc); 
     }
     const uint16_t out_h = float_to_float16(acc);
-    // replicate the scalar dot across all lanes (as per your spec)
+    
     uint64_t result_64 = 0;
-    for (int i = 0; i < 4; ++i) fp16_set_lane(result_64, i, out_h);
+    for(int i = 0; i < 4; ++i){
+      fp16_set_lane(result_64, i, out_h);
+    }
     std::fesetround(original_rm);
     return {result_64, fcsr};
 }
 
 case AluOp::FMADD_FP16: {
     uint64_t result_64 = 0;
-    for (int i = 0; i < 4; ++i) {
+    for(int i = 0; i < 4; ++i){
         const uint16_t a_h = fp16_lane(ina, i);
         const uint16_t b_h = fp16_lane(inb, i);
         const uint16_t c_h = fp16_lane(inc, i);
         const float f1 = float16_to_float(a_h);
         const float f2 = float16_to_float(b_h);
         const float f3 = float16_to_float(c_h);
-        const float rf = std::fma(f1, f2, f3); // fused
+        const float rf = std::fma(f1, f2, f3);
         const uint16_t r_h = float_to_float16(rf);
         fp16_set_lane(result_64, i, r_h);
     }
@@ -2296,26 +2497,26 @@ case AluOp::FMADD_FP16: {
       break;
     }
         case AluOp::FMADD_BF16: {
-        // Unpack fs1 (ina), fs2 (inb), fs3 (inc)
+     
         uint16_t fs1_vals[4];
         uint16_t fs2_vals[4];
         uint16_t fs3_vals[4];
-        for (int i = 0; i < 4; ++i) {
+        for(int i = 0; i < 4; ++i){
             fs1_vals[i] = (uint16_t)(ina >> (i * 16));
             fs2_vals[i] = (uint16_t)(inb >> (i * 16));
-            fs3_vals[i] = (uint16_t)(inc >> (i * 16)); // Use inc for fs3
+            fs3_vals[i] = (uint16_t)(inc >> (i * 16));
         }
 
         float results_fp32[4];
-        for (int i = 0; i < 4; ++i) {
+        for(int i = 0; i < 4; ++i){
             float f1 = bfloat16_to_float(fs1_vals[i]);
             float f2 = bfloat16_to_float(fs2_vals[i]);
             float f3 = bfloat16_to_float(fs3_vals[i]);
-            results_fp32[i] = std::fma(f1, f2, f3); // Use fma for fused multiply-add
+            results_fp32[i] = std::fma(f1, f2, f3); 
         }
 
         uint64_t result_64 = 0;
-        for (int i = 0; i < 4; ++i) {
+        for(int i = 0; i < 4; ++i){
             result_64 |= (uint64_t)float_to_bfloat16(results_fp32[i]) << (i * 16);
         }
         std::fesetround(original_rm);
@@ -2328,7 +2529,7 @@ case AluOp::FMADD_FP16: {
       std::array<float, 4> vals_b = msfp16_unpack(inb);
       std::array<float, 4> vals_r;
 
-      for(int i=0; i<4; ++i) {
+      for(int i=0; i<4; ++i){
           vals_r[i] = vals_a[i] + vals_b[i];
       }
       
@@ -2342,7 +2543,7 @@ case AluOp::FMADD_FP16: {
       std::array<float, 4> vals_b = msfp16_unpack(inb);
       std::array<float, 4> vals_r;
 
-      for(int i=0; i<4; ++i) {
+      for(int i=0; i<4; ++i){
           vals_r[i] = vals_a[i] - vals_b[i];
       }
       
@@ -2356,7 +2557,7 @@ case AluOp::FMADD_FP16: {
       std::array<float, 4> vals_b = msfp16_unpack(inb);
       std::array<float, 4> vals_r;
 
-      for(int i=0; i<4; ++i) {
+      for(int i=0; i<4; ++i){
           vals_r[i] = vals_a[i] * vals_b[i];
       }
       
@@ -2370,7 +2571,7 @@ case AluOp::FMADD_FP16: {
       std::array<float, 4> vals_b = msfp16_unpack(inb);
       std::array<float, 4> vals_r;
 
-      for(int i=0; i<4; ++i) {
+      for(int i=0; i<4; ++i){
           vals_r[i] = std::fmax(vals_a[i], vals_b[i]);
       }
       
@@ -2379,13 +2580,13 @@ case AluOp::FMADD_FP16: {
       return {result_64, fcsr};
   }
 
-  case AluOp::FMADD_MSFP16: {
+  case AluOp::FMADD_MSFP16:{
       std::array<float, 4> vals_a = msfp16_unpack(ina); // fs1
       std::array<float, 4> vals_b = msfp16_unpack(inb); // fs2
       std::array<float, 4> vals_c = msfp16_unpack(inc); // fs3
       std::array<float, 4> vals_r;
 
-      for(int i=0; i<4; ++i) {
+      for(int i=0; i<4; ++i){
           vals_r[i] = std::fma(vals_a[i], vals_b[i], vals_c[i]);
       }
       

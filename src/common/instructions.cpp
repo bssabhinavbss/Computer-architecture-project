@@ -236,7 +236,7 @@ std::unordered_map<std::string, Instruction> instruction_string_map = {
     {"fmax.bf16", Instruction::kfmax_bf16},
     {"fmadd.bf16", Instruction::kfmadd_bf16},
 
-    // NEW FLOAT16 Instructions ---
+    // Float16 instructions
   {"fadd.fp16", Instruction::kfadd_fp16},
   {"fsub.fp16", Instruction::kfsub_fp16},
   {"fmul.fp16", Instruction::kfmul_fp16},
@@ -244,14 +244,14 @@ std::unordered_map<std::string, Instruction> instruction_string_map = {
   {"fdot.fp16", Instruction::kfdot_fp16},
   {"fmadd.fp16", Instruction::kfmadd_fp16},
 
-  // --- NEW MSFP16 Instructions ---
+  // MSFP16 brainwave instructions
   {"fadd.msfp16", Instruction::kfadd_msfp16},
   {"fsub.msfp16", Instruction::kfsub_msfp16},
   {"fmul.msfp16", Instruction::kfmul_msfp16},
   {"fmax.msfp16", Instruction::kfmax_msfp16},
   {"fmadd.msfp16", Instruction::kfmadd_msfp16},
 
-  // === QALU Quantum-Tagged Instructions ===
+  // Quantum ALU instructions
   {"qalloc.a", Instruction::kqalloc_a},
   {"qalloc.b", Instruction::kqalloc_b},
   {"qha", Instruction::kqha},
@@ -262,7 +262,7 @@ std::unordered_map<std::string, Instruction> instruction_string_map = {
   {"qmeas", Instruction::kqmeas},
   {"qnorma", Instruction::kqnorma},
   {"qnormb", Instruction::kqnormb},
-  // ======================================
+  
 
 };
 
@@ -323,14 +323,16 @@ static const std::unordered_set<std::string> valid_instructions = {
         // BFloat16 Instructions
     "fadd.bf16", "fsub.bf16", "fmul.bf16", "fmax.bf16", "fmadd.bf16",
 
+    // Float16
+
     "fadd.fp16", "fsub.fp16", "fmul.fp16", "fmax.fp16", "fdot.fp16", "fmadd.fp16",
 
     // MSFP16
     "fadd.msfp16", "fsub.msfp16", "fmul.msfp16", "fmax.msfp16", "fmadd.msfp16",
 
-    // === QALU Quantum-Tagged Instructions ===
+    // Quantum ALU
   "qalloc.a", "qalloc.b", "qha", "qhb", "qxa", "qxb", "qphase", "qmeas", "qnorma", "qnormb",
-  // ======================================
+
 
 };
 
@@ -355,9 +357,9 @@ static const std::unordered_set<std::string> RTypeInstructions = {
 
     // M Extension RV64
     "mulw", "divw", "divuw", "remw", "remuw",
-    // === QALU Quantum-Tagged Instructions ===
+    // Quantum ALU
   "qalloc.a", "qalloc.b", "qha", "qhb", "qxa", "qxb", "qphase", "qmeas", "qnorma", "qnormb",
-  // ======================================
+ 
 
 };
 
@@ -603,7 +605,7 @@ std::unordered_map<std::string, RTypeInstructionEncoding> R_type_instruction_enc
     {"remuw", {0b0111011, 0b111, 0b0000001}}, // O_GPR_C_GPR_C_GPR
 
 
-  // === QALU Quantum-Tagged Instructions ===
+  // Quantum ALU
   {"qalloc.a", {0b0110011, 0b000, 0b0101010}}, // O_GPR_C_GPR_C_GPR
   {"qalloc.b", {0b0110011, 0b001, 0b0101010}}, // O_GPR_C_GPR_C_GPR
   {"qha",      {0b0110011, 0b010, 0b0101010}}, // O_GPR_C_GPR_C_GPR
@@ -614,7 +616,7 @@ std::unordered_map<std::string, RTypeInstructionEncoding> R_type_instruction_enc
   {"qmeas",    {0b0110011, 0b111, 0b0101010}}, // O_GPR_C_GPR_C_GPR
   {"qnorma",   {0b0110011, 0b111, 0b0101011}}, // O_GPR_C_GPR_C_GPR
   {"qnormb",   {0b0110011, 0b110, 0b0101011}}, // O_GPR_C_GPR_C_GPR
-  // =========================================
+
 
 
 };
@@ -1129,7 +1131,7 @@ std::unordered_map<std::string, std::vector<SyntaxType>> instruction_syntax_map 
   {"fmadd.msfp16", {SyntaxType::O_FPR_C_FPR_C_FPR_C_FPR}},
 
   
-// === QALU Quantum-Tagged Instructions ===
+// Quantum ALU
   {"qalloc.a", {SyntaxType::O_GPR_C_GPR_C_GPR}},
   {"qalloc.b", {SyntaxType::O_GPR_C_GPR_C_GPR}},
   {"qha", {SyntaxType::O_GPR_C_GPR_C_GPR}},
@@ -1140,7 +1142,7 @@ std::unordered_map<std::string, std::vector<SyntaxType>> instruction_syntax_map 
   {"qmeas", {SyntaxType::O_GPR_C_GPR_C_GPR}},
   {"qnorma", {SyntaxType::O_GPR_C_GPR_C_GPR}},
   {"qnormb", {SyntaxType::O_GPR_C_GPR_C_GPR}},
-  // ======================================
+  
 };
 
 bool isValidInstruction(const std::string &instruction) {
@@ -1265,20 +1267,20 @@ bool isFInstruction(const uint32_t &instruction) {
         return true;
       }
       switch(funct7){
-        // kfxxx_bf16
+        // bfloat16
         case 0b0011000: 
         case 0b0011001:
         case 0b0011010:
         case 0b0011011:
 
-        // kfxxx_fp16
+        // float16
         case 0b0101000:
         case 0b0101001:
         case 0b0101010:
         case 0b0101011:
         case 0b0101110:
 
-        // kfxxx_msfp16
+        // msfp16
         case 0b0111000:
         case 0b0111001:
         case 0b0111010:
