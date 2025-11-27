@@ -30,3 +30,9 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
       -DCMAKE_CXX_COMPILER=/opt/homebrew/bin/g++-14 \
       ..
 - make -j4
+
+## building for linux
+- mkdir build
+- cd build
+- cmake ..
+- make -j4
