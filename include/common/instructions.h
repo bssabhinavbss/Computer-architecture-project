@@ -282,7 +282,7 @@ enum Instruction {
   kecc_div,
 
 
-  // === QALU Quantum-Tagged Instructions ===
+  
   kqalloc_a,
   kqalloc_b,
   kqha,
