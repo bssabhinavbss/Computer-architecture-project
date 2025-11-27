@@ -1852,6 +1852,7 @@ static std::string decode_fclass(uint16_t res) {
       static bool cache_valid = false;
       if(cache_valid && 
           ((a == prev_a && b == prev_b)||(a == prev_b && b == prev_a))){
+          std::cout << "cache hit" << "\n";
           return {prev_result, false};
       }
       int32_t sa_upper = static_cast<int32_t>(a >> 32);
@@ -1867,7 +1868,6 @@ static std::string decode_fclass(uint16_t res) {
       prev_b = b;
       prev_result = sr;
       cache_valid = true;
-
       return {sr, false};
     }
     case AluOp::kSub_cache: {
@@ -1876,6 +1876,7 @@ static std::string decode_fclass(uint16_t res) {
       static int64_t prev_result = 0;
       static bool cache_valid = false;
       if(cache_valid && (a == prev_a && b == prev_b)){
+         std::cout << "cache hit" << "\n";
           return {prev_result, false};
       }
       int32_t sa_upper = static_cast<int32_t>(a >> 32);
@@ -1885,8 +1886,6 @@ static std::string decode_fclass(uint16_t res) {
 
       int64_t sr_upper_val = static_cast<int64_t>(sa_upper) - static_cast<int64_t>(sb_upper);
       int64_t sr_lower_val = static_cast<int64_t>(sa_lower) - static_cast<int64_t>(sb_lower);
-      
-
       int64_t sr_upper = static_cast<int64_t>(static_cast<int32_t>(sr_upper_val));
       int64_t sr_lower = static_cast<int64_t>(static_cast<int32_t>(sr_lower_val));
       int64_t sr = (sr_upper << 32) | (sr_lower & 0xFFFFFFFFLL);
@@ -1908,6 +1907,7 @@ static std::string decode_fclass(uint16_t res) {
       
       if(cache_valid && 
           ((a == prev_a && b == prev_b) || (a == prev_b && b == prev_a))){
+             std::cout << "cache hit" << "\n";
           return {prev_result, false};
       }
 
@@ -1933,6 +1933,7 @@ static std::string decode_fclass(uint16_t res) {
       static int64_t prev_result = 0;
       static bool cache_valid = false;
       if(cache_valid && (a == prev_a && b == prev_b)){
+         std::cout << "cache hit" << "\n";
           return {prev_result, false};
       }
       int32_t sa_upper = static_cast<int32_t>(a >> 32);
